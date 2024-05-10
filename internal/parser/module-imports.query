@@ -1,0 +1,25 @@
+(
+  (
+    export_statement
+      decorator: (
+        decorator (
+          call_expression
+            function: (identifier) @decorator-name
+            arguments: (
+              arguments (
+                object (
+                  pair
+                    key: (property_identifier) @imports-key
+                    value: (array (identifier) @imports-list)
+                )
+              )
+            )
+        )
+      )
+      declaration: (
+        class_declaration name: (type_identifier) @module-name
+      )
+  )
+  (#eq? @decorator-name "Module")
+  (#eq? @imports-key "imports")
+)
