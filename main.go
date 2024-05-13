@@ -16,5 +16,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not read file: %v", err)
 	}
-	parser.ParseAll(sourceCode)
+	err = parser.ParseAll(sourceCode)
+	if err != nil {
+		log.Fatalf("Failed to parse: %v", err)
+	}
 }
