@@ -1,10 +1,6 @@
 package parser
 
-import (
-	"fmt"
-
-	sitter "github.com/smacker/go-tree-sitter"
-)
+import sitter "github.com/smacker/go-tree-sitter"
 
 type ModuleImportPair struct {
 	moduleName string

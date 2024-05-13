@@ -1,0 +1,36 @@
+;; this query is for imports like
+;; import { OtherName as SomeOtherImport } from "src/some-other-import"
+(
+  import_statement (
+    import_clause (
+      named_imports (
+        import_specifier
+        name: (identifier)
+        alias: (identifier) @import-name
+        )
+      )
+    )
+    source: (string (string_fragment) @import-path)
+)
+
+;; this is for imports like
+;; import { SomeImport } from "./some-import";
+(
+  import_statement (
+    import_clause (
+      named_imports (
+        import_specifier name: (identifier) @import-name
+        )
+      )
+    )
+    source: (string (string_fragment) @import-path)
+)
+
+;; and this is for queries like
+;; import ThirdModule from "@src/third-module";
+(
+  import_statement (
+    import_clause (identifier) @import-name
+    )
+    source: (string (string_fragment) @import-path)
+)
