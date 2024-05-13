@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"fmt"
+
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
@@ -37,8 +39,7 @@ func GetImportsByModuleFromFile(
 		for _, c := range m.Captures {
 			if c.Index == _MODULE_NAME_IDX {
 				currPair.moduleName = c.Node.Content(sourceCode)
-			}
-			if c.Index == _IMPORTS_LIST_IDX {
+			} else if c.Index == _IMPORTS_LIST_IDX {
 				currPair.importName = c.Node.Content(sourceCode)
 			}
 		}
