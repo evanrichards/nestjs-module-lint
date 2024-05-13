@@ -41,3 +41,7 @@ func LoadImportPathQuery() (*sitter.Query, error) {
 func LoadModuleExportQuery() (*sitter.Query, error) {
 	return queryForFile("module-exports.query")
 }
+
+func LoadModuleProviderControllerQuery() (*sitter.Query, error) {
+	return queryForFile("module-provider-controller.query")
+}

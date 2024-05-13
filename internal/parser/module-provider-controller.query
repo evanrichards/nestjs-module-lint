@@ -1,0 +1,52 @@
+
+(
+  (
+    export_statement
+      decorator: (
+        decorator (
+          call_expression
+            function: (identifier) @decorator-name
+            arguments: (
+              arguments (
+                object (
+                  pair
+                    key: (property_identifier) @provider-controller-key
+                    value: (array (identifier) @provider-controller-list)
+                )
+              )
+            )
+        )
+      )
+      declaration: (
+        class_declaration name: (type_identifier) @module-name
+      )
+  )
+  (#eq? @decorator-name "Module")
+  (#eq? @provider-controller-key "providers")
+)
+
+(
+  (
+    export_statement
+      decorator: (
+        decorator (
+          call_expression
+            function: (identifier) @decorator-name
+            arguments: (
+              arguments (
+                object (
+                  pair
+                    key: (property_identifier) @provider-controller-key
+                    value: (array (identifier) @provider-controller-list)
+                )
+              )
+            )
+        )
+      )
+      declaration: (
+        class_declaration name: (type_identifier) @module-name
+      )
+  )
+  (#eq? @decorator-name "Module")
+  (#eq? @provider-controller-key "controllers")
+)

@@ -22,8 +22,9 @@ func ParseAll(
 	var wg sync.WaitGroup
 	var moduleInputPairs map[string][]string
 	var moduleExportPairs map[string][]string
+	var moduleProviderPairs map[string][]string
 	var importPathsByName map[string]string
-	var err1, err2, err3 error
+	var err1, err2, err3, err4 error
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -42,6 +43,12 @@ func ParseAll(
 		moduleExportPairs, err3 = GetExportsByModuleFromFile(n, sourceCode)
 	}()
 
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		moduleProviderPairs, err4 = GetProviderControllersByModuleFromFile(n, sourceCode)
+	}()
+
 	wg.Wait()
 
 	if err1 != nil {
@@ -53,11 +60,16 @@ func ParseAll(
 	if err3 != nil {
 		return err3
 	}
+	if err4 != nil {
+		return err4
+	}
 
 	fmt.Println("Input pairs:")
 	fmt.Printf("%v\n", moduleInputPairs)
 	fmt.Println("Export pairs:")
 	fmt.Printf("%v\n", moduleExportPairs)
+	fmt.Println("Provider pairs:")
+	fmt.Printf("%v\n", moduleProviderPairs)
 	fmt.Println("Import paths:")
 	fmt.Printf("%v\n", importPathsByName)
 	return nil
