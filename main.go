@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/loop-payments/nestjs-module-lint/internal/parser"
+	"github.com/loop-payments/nestjs-module-lint/internal/app"
 	"log"
 	"os"
 )
@@ -12,11 +12,7 @@ func main() {
 		log.Fatal("Usage: go run parser.go <path-to-typescript-file>")
 	}
 	filePath := os.Args[1]
-	sourceCode, err := os.ReadFile(filePath)
-	if err != nil {
-		log.Fatalf("Could not read file: %v", err)
-	}
-	err = parser.ParseAll(sourceCode)
+	err := app.Run(filePath)
 	if err != nil {
 		log.Fatalf("Failed to parse: %v", err)
 	}
