@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/loop-payments/nestjs-module-lint/internal/parser"
@@ -169,6 +170,10 @@ func getFileImports(
 	var fileImportNodes []FileImportNode
 	fileDir := filepath.Dir(filePath)
 	for importName, importPath := range fileImports {
+    // Skip @nestjs/ imports
+		if strings.HasPrefix(importPath, "@nestjs/") {
+			continue
+		}
 		fullpath := pathResolver.ResolveImportPath(fileDir, importPath)
 		fileImportNodes = append(fileImportNodes, FileImportNode{importPath, importName, fullpath})
 	}
