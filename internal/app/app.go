@@ -12,6 +12,8 @@ import (
 	pathresolver "github.com/loop-payments/nestjs-module-lint/internal/path-resolver"
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/typescript/typescript"
+	mpb "github.com/vbauerster/mpb/v8"
+	"github.com/vbauerster/mpb/v8/decor"
 )
 
 var cwd string
@@ -43,6 +45,17 @@ func RunForDirRecursively(
 	} else {
 		files = []string{root}
 	}
+	p := mpb.New(mpb.WithWidth(64))
+
+	bar := p.New(int64(len(files)),
+		// BarFillerBuilder with custom style
+		mpb.BarStyle(),
+		mpb.PrependDecorators(
+			// replace ETA decorator with "done" message, OnComplete event
+			decor.OnComplete(decor.AverageETA(decor.ET_STYLE_GO), "done"),
+		),
+		mpb.AppendDecorators(decor.Percentage()),
+	)
 	var wg sync.WaitGroup
 	resultChan := make(chan struct {
 		*ModuleReport
@@ -51,7 +64,10 @@ func RunForDirRecursively(
 	for _, file := range files {
 		wg.Add(1)
 		go func(file string) {
-			defer wg.Done()
+			defer func() {
+				wg.Done()
+				bar.Increment()
+			}()
 			moduleReports, err := RunForModuleFile(file)
 			if err != nil {
 				resultChan <- struct {
@@ -71,6 +87,7 @@ func RunForDirRecursively(
 	// Close the result channel once all goroutines have completed
 	go func() {
 		wg.Wait()
+		p.Wait()
 		close(resultChan)
 	}()
 
