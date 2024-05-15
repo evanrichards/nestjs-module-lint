@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"sync"
 
 	"github.com/loop-payments/nestjs-module-lint/internal/parser"
@@ -96,8 +98,15 @@ func RunForDirRecursively(
 		if result.error != nil {
 			return nil, result.error
 		}
-		results = append(results, result.ModuleReport)
+		if result.ModuleReport != nil && len(result.ModuleReport.UnnecessaryImports) > 0 {
+			results = append(results, result.ModuleReport)
+		}
 	}
+
+	// sort results by module name
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].ModuleName < results[j].ModuleName
+	})
 
 	return results, nil
 }
@@ -154,9 +163,9 @@ func RunForModuleFile(
 }
 
 type ModuleReport struct {
-	ModuleName         string
-	Path               string
-	UnnecessaryImports []string
+	ModuleName         string   `json:"module_name"`
+	Path               string   `json:"path"`
+	UnnecessaryImports []string `json:"unnecessary_imports"`
 }
 
 func runForModule(
@@ -177,4 +186,13 @@ func runForModule(
 		Path:               qualifiedPathToModule,
 		UnnecessaryImports: unecessaryInputs,
 	}, nil
+}
+
+func PrettyPrintModuleReport(report *ModuleReport) string {
+	builder := strings.Builder{}
+	builder.WriteString(fmt.Sprintf("Module: %s\nPath: %s\nUnnecessary Imports:\n", report.ModuleName, report.Path))
+	for _, imp := range report.UnnecessaryImports {
+		builder.WriteString(fmt.Sprintf("\t%s\n", imp))
+	}
+	return builder.String()
 }
