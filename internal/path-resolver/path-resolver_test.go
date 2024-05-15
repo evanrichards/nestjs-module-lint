@@ -22,7 +22,8 @@ func TestResolveImportPath(t *testing.T) {
 		expected   string
 	}{
 		{"resolve @paths", "@testing/my-new-test", "/path/to/project/test/for/stuff/my-new-test.ts"},
-		// {"resolve local paths", "./src/my-new-test", "/path/to/project/src/my-new-test.ts"},
+		{"resolve local paths", "./my-new-test", "/unit-test/my-new-test.ts"},
+		{"resolve package local paths", "src/my-new-test", "/path/to/project/src/my-new-test.ts"},
 	}
 
 	tsPathResolver, err := pathresolver.NewTsPathResolver([]byte(tsConfig), "/path/to/project")

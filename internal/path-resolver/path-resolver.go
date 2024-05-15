@@ -75,11 +75,6 @@ func (t *TsPathResolver) ResolveImportPath(importingFileDir, importPath string) 
 		importPath = importPath + ".ts"
 	}
 
-	if strings.HasPrefix(importPath, ".") {
-		absolutePath := filepath.Join(importingFileDir, importPath)
-		return filepath.Clean(absolutePath)
-	}
-
 	for alias, paths := range t.paths {
 		aliasPattern := "^" + strings.ReplaceAll(alias, "*", "(.*)") + "$"
 		regexpAlias := regexp.MustCompile(aliasPattern)
@@ -90,10 +85,15 @@ func (t *TsPathResolver) ResolveImportPath(importingFileDir, importPath string) 
 				if strings.Contains(path, "*") && len(submatches) > 1 {
 					resolvedPath = strings.Replace(path, "*", submatches[1], 1)
 				}
+        fmt.Println("resolvedPath", resolvedPath)
 				absolutePath := filepath.Join(t.projectRoot, resolvedPath)
 				return filepath.Clean(absolutePath)
 			}
 		}
+	}
+	if strings.HasPrefix(importPath, ".") {
+		absolutePath := filepath.Join(importingFileDir, importPath)
+		return filepath.Clean(absolutePath)
 	}
 	return filepath.Join(t.projectRoot, importPath)
 }
