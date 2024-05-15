@@ -85,7 +85,6 @@ func (t *TsPathResolver) ResolveImportPath(importingFileDir, importPath string) 
 				if strings.Contains(path, "*") && len(submatches) > 1 {
 					resolvedPath = strings.Replace(path, "*", submatches[1], 1)
 				}
-        fmt.Println("resolvedPath", resolvedPath)
 				absolutePath := filepath.Join(t.projectRoot, resolvedPath)
 				return filepath.Clean(absolutePath)
 			}

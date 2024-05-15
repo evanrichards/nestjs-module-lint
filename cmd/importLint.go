@@ -6,6 +6,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/loop-payments/nestjs-module-lint/internal/app"
 	"github.com/spf13/cobra"
@@ -32,6 +33,9 @@ var importLintCmd = &cobra.Command{
 					fmt.Println(app.PrettyPrintModuleReport(report))
 				}
 				fmt.Printf("Total number of modules with unused imports: %d\n", len(reports))
+			}
+			if len(reports) > 0 {
+				os.Exit(1)
 			}
 		}
 	},
