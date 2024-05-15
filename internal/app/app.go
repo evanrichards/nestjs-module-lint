@@ -46,7 +46,7 @@ func Run(
 	if err != nil {
 		return err
 	}
-	fileImports, err := getFileImports(n, sourceCode, pathResolver)
+	fileImports, err := getFileImports(n, sourceCode, pathResolver, qualifiedPathToModule)
 	if err != nil {
 		return err
 	}

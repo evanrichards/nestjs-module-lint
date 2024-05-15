@@ -7,13 +7,30 @@ import (
 )
 
 func main() {
-
 	if len(os.Args) < 2 {
-		log.Fatal("Usage: go run parser.go <path-to-typescript-file>")
+		log.Fatal("Usage: nestjs-module-lint <path-to-directory-or-file>")
 	}
-	filePath := os.Args[1]
-	err := app.Run(filePath)
+	inputPath := os.Args[1]
+
+	info, err := os.Stat(inputPath)
 	if err != nil {
-		log.Fatalf("Failed to parse: %v", err)
+		log.Fatalf("Failed to access path: %v", err)
+	}
+
+	var files []string
+	if info.IsDir() {
+		files, err = app.FindTSFiles(inputPath)
+		if err != nil {
+			log.Fatalf("Failed to find TypeScript files: %v", err)
+		}
+	} else {
+		files = []string{inputPath}
+	}
+
+	for _, file := range files {
+		err := app.Run(file)
+		if err != nil {
+			log.Printf("Failed to parse %s: %v", file, err)
+		}
 	}
 }

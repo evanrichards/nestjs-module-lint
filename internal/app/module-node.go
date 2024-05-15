@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/loop-payments/nestjs-module-lint/internal/parser"
@@ -152,17 +153,23 @@ func getFileImportsForFile(filePath string, pathResolver *pathresolver.TsPathRes
 	if err != nil {
 		return nil, err
 	}
-	return getFileImports(n, sourceCode, pathResolver)
+	return getFileImports(n, sourceCode, pathResolver, filePath)
 }
 
-func getFileImports(n *sitter.Node, sourceCode []byte, pathResolver *pathresolver.TsPathResolver) ([]FileImportNode, error) {
+func getFileImports(
+	n *sitter.Node,
+	sourceCode []byte,
+	pathResolver *pathresolver.TsPathResolver,
+	filePath string,
+) ([]FileImportNode, error) {
 	fileImports, err := parser.GetImportPathsByImportNames(n, sourceCode)
 	if err != nil {
 		return nil, err
 	}
 	var fileImportNodes []FileImportNode
+	fileDir := filepath.Dir(filePath)
 	for importName, importPath := range fileImports {
-		fullpath := pathResolver.ResolveImportPath(importPath)
+		fullpath := pathResolver.ResolveImportPath(fileDir, importPath)
 		fileImportNodes = append(fileImportNodes, FileImportNode{importPath, importName, fullpath})
 	}
 	return fileImportNodes, nil

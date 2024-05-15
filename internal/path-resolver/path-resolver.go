@@ -70,9 +70,14 @@ func NewTsPathResolver(tsConfigFileContents []byte, projectRoot string) (*TsPath
 	}, nil
 }
 
-func (t *TsPathResolver) ResolveImportPath(importPath string) string {
+func (t *TsPathResolver) ResolveImportPath(importingFileDir, importPath string) string {
 	if !strings.HasSuffix(importPath, ".ts") {
 		importPath = importPath + ".ts"
+	}
+
+	if strings.HasPrefix(importPath, ".") {
+		absolutePath := filepath.Join(importingFileDir, importPath)
+		return filepath.Clean(absolutePath)
 	}
 
 	for alias, paths := range t.paths {
@@ -86,7 +91,7 @@ func (t *TsPathResolver) ResolveImportPath(importPath string) string {
 					resolvedPath = strings.Replace(path, "*", submatches[1], 1)
 				}
 				absolutePath := filepath.Join(t.projectRoot, resolvedPath)
-				return absolutePath
+				return filepath.Clean(absolutePath)
 			}
 		}
 	}
