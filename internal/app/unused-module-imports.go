@@ -18,6 +18,7 @@ import (
 	"github.com/vbauerster/mpb/v8/decor"
 )
 
+var AnyOwner = "ANY"
 var cwd string
 var lang *sitter.Language
 
@@ -32,6 +33,7 @@ func init() {
 
 func RunForDirRecursively(
 	root string,
+	forOwner string,
 ) ([]*ModuleReport, error) {
 	info, err := os.Stat(root)
 	if err != nil {
@@ -70,6 +72,26 @@ func RunForDirRecursively(
 				wg.Done()
 				bar.Increment()
 			}()
+			var localWg sync.WaitGroup
+			localWg.Add(1)
+
+			var owner string
+			var ownerErr error
+			// Load OWNERS file
+			go func(file string) {
+				defer localWg.Done()
+				ownersPath, err := FindOwnersFile(filepath.Dir(file))
+
+				if err != nil {
+					ownerErr = fmt.Errorf("failed to find owners file for %s: %w", file, err)
+					return
+				}
+				owner, err = ParseOwnersFile(ownersPath)
+				if forOwner != AnyOwner && forOwner != owner {
+					owner = ""
+				}
+			}(file)
+
 			moduleReports, err := RunForModuleFile(file)
 			if err != nil {
 				resultChan <- struct {
@@ -77,7 +99,20 @@ func RunForDirRecursively(
 					error
 				}{nil, fmt.Errorf("failed to run app for %s: %w", file, err)}
 			}
+			localWg.Wait()
+			if ownerErr != nil {
+				resultChan <- struct {
+					*ModuleReport
+					error
+				}{nil, ownerErr}
+				return
+			}
+			if owner == "" {
+				return
+			}
+
 			for _, report := range moduleReports {
+				report.Owner = owner
 				resultChan <- struct {
 					*ModuleReport
 					error
@@ -166,6 +201,7 @@ type ModuleReport struct {
 	ModuleName         string   `json:"module_name"`
 	Path               string   `json:"path"`
 	UnnecessaryImports []string `json:"unnecessary_imports"`
+	Owner              string   `json:"owner,omitempty"`
 }
 
 func runForModule(
@@ -190,7 +226,7 @@ func runForModule(
 
 func PrettyPrintModuleReport(report *ModuleReport) string {
 	builder := strings.Builder{}
-	builder.WriteString(fmt.Sprintf("Module: %s\nPath: %s\nUnnecessary Imports:\n", report.ModuleName, report.Path))
+	builder.WriteString(fmt.Sprintf("Module: %s\nOwner: %s\nPath: %s\nUnnecessary Imports:\n", report.ModuleName, report.Owner, report.Path))
 	for _, imp := range report.UnnecessaryImports {
 		builder.WriteString(fmt.Sprintf("\t%s\n", imp))
 	}
