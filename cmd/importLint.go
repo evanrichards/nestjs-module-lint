@@ -14,13 +14,13 @@ import (
 
 // importLintCmd represents the importLint command
 var importLintCmd = &cobra.Command{
-	Use:   "importLint",
+	Use:   "import-lint",
 	Short: "Unused import linting",
 	Long:  `This command will lint your project for unused module imports.`,
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		for _, arg := range args {
-			reports, err := app.RunForDirRecursively(arg)
+			reports, err := app.RunForDirRecursively(arg, forOwner)
 			if err != nil {
 				panic(err)
 			}
@@ -43,6 +43,7 @@ var importLintCmd = &cobra.Command{
 
 var ofJson bool
 var ofText bool
+var forOwner string
 
 func init() {
 	rootCmd.AddCommand(importLintCmd)
@@ -51,5 +52,6 @@ func init() {
 	// is called directly, e.g.:
 	importLintCmd.Flags().BoolVar(&ofJson, "json", false, "Output in JSON")
 	importLintCmd.Flags().BoolVar(&ofText, "text", false, "Output in text")
+	importLintCmd.Flags().StringVar(&forOwner, "owner", app.AnyOwner, "Filter by owner")
 	importLintCmd.MarkFlagsMutuallyExclusive("json", "text")
 }
