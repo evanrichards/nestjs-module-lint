@@ -1,0 +1,49 @@
+repos:
+  - repo: local
+    hooks:
+      - id: go-fmt
+        name: go-fmt
+        entry: gofmt -l -s
+        language: golang
+        files: \.go$
+        pass_filenames: false
+        args: [-w, .]
+      
+      - id: go-lint
+        name: go-lint
+        entry: bash
+        language: system
+        files: \.go$
+        pass_filenames: false
+        args:
+          - -c
+          - |
+            if command -v golangci-lint &> /dev/null; then
+              golangci-lint run ./...
+            else
+              echo "Warning: golangci-lint not found, skipping lint check"
+              echo "Install with: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"
+            fi
+      
+      - id: go-test
+        name: go-test
+        entry: go test
+        language: golang
+        files: \.go$
+        pass_filenames: false
+        args: [-v, ./...]
+      
+      - id: ensure-ci-test-files
+        name: ensure-ci-test-files
+        entry: bash
+        language: system
+        files: \.go$|\.ts$
+        pass_filenames: false
+        args:
+          - -c
+          - |
+            if [ ! -f "ci-test-files/test.module.ts" ]; then
+              echo "ERROR: ci-test-files/test.module.ts is missing!"
+              echo "This file is required for CI testing. Please do not delete it."
+              exit 1
+            fi
