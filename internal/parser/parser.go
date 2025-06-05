@@ -6,15 +6,13 @@ import (
 	"sync"
 
 	sitter "github.com/smacker/go-tree-sitter"
-	"github.com/smacker/go-tree-sitter/typescript/typescript"
 )
 
 func ParseAll(
 	sourceCode []byte,
 ) error {
-	// Parse source code
-	lang := typescript.GetLanguage()
-	n, err := sitter.ParseCtx(context.Background(), sourceCode, lang)
+	// Parse source code using the singleton language instance
+	n, err := sitter.ParseCtx(context.Background(), sourceCode, typescriptLang)
 	if err != nil {
 		return err
 	}

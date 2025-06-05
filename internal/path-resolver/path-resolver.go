@@ -7,11 +7,16 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 type TsPathResolver struct {
 	paths       map[string][]string
 	projectRoot string
+	
+	// Cache compiled regexes to avoid recompilation
+	regexCache map[string]*regexp.Regexp
+	regexMutex sync.RWMutex
 }
 
 type CompilerOptions struct {
@@ -23,8 +28,12 @@ type TsConfig struct {
 }
 
 func removeCommentLinesFromJson(tsConfigFileContents []byte) []byte {
-	var tsConfigFileContentsWithoutComments []byte
+	var builder strings.Builder
 	inMultiLineComment := false
+	
+	// Pre-allocate approximate capacity to reduce allocations
+	builder.Grow(len(tsConfigFileContents))
+	
 	for _, line := range strings.Split(string(tsConfigFileContents), "\n") {
 		trimmedLine := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmedLine, "/*") {
@@ -36,10 +45,11 @@ func removeCommentLinesFromJson(tsConfigFileContents []byte) []byte {
 			continue
 		}
 		if !inMultiLineComment && !strings.HasPrefix(trimmedLine, "//") {
-			tsConfigFileContentsWithoutComments = append(tsConfigFileContentsWithoutComments, line...)
+			builder.WriteString(line)
+			builder.WriteByte('\n')
 		}
 	}
-	return tsConfigFileContentsWithoutComments
+	return []byte(builder.String())
 }
 
 func ParseTsConfigFile(tsConfigFileContents []byte) (*TsConfig, error) {
@@ -71,6 +81,7 @@ func NewTsPathResolver(tsConfigFileContents []byte, projectRoot string) (*TsPath
 	return &TsPathResolver{
 		paths:       tsConfig.CompilerOptions.Paths,
 		projectRoot: projectRoot,
+		regexCache:  make(map[string]*regexp.Regexp),
 	}, nil
 }
 
@@ -81,7 +92,24 @@ func (t *TsPathResolver) ResolveImportPath(importingFileDir, importPath string) 
 
 	for alias, paths := range t.paths {
 		aliasPattern := "^" + strings.ReplaceAll(alias, "*", "(.*)") + "$"
-		regexpAlias := regexp.MustCompile(aliasPattern)
+		
+		// Check cache first
+		t.regexMutex.RLock()
+		regexpAlias, exists := t.regexCache[aliasPattern]
+		t.regexMutex.RUnlock()
+		
+		if !exists {
+			// Compile and cache the regex
+			compiledRegex, err := regexp.Compile(aliasPattern)
+			if err != nil {
+				continue // Skip invalid patterns
+			}
+			t.regexMutex.Lock()
+			t.regexCache[aliasPattern] = compiledRegex
+			t.regexMutex.Unlock()
+			regexpAlias = compiledRegex
+		}
+		
 		if regexpAlias.MatchString(importPath) {
 			submatches := regexpAlias.FindStringSubmatch(importPath)
 			var fallbackPath string

@@ -13,7 +13,11 @@ func FindTSFiles(root string) ([]string, error) {
 		if err != nil {
 			return err
 		}
-		if !info.IsDir() && strings.HasSuffix(path, ".module.ts") {
+		// Skip directories and non-.module.ts files early
+		if info.IsDir() {
+			return nil
+		}
+		if strings.HasSuffix(path, ".module.ts") {
 			tsFiles = append(tsFiles, path)
 		}
 		return nil

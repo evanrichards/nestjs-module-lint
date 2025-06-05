@@ -18,8 +18,10 @@ import (
 	"github.com/vbauerster/mpb/v8/decor"
 )
 
-var cwd string
-var lang *sitter.Language
+var (
+	cwd  string
+	lang *sitter.Language
+)
 
 func init() {
 	_cwd, err := os.Getwd()
@@ -52,7 +54,8 @@ func RunForDirRecursively(
 		}
 	} else {
 		// Validate file extension for single files
-		if !strings.HasSuffix(strings.ToLower(root), ".ts") && !strings.HasSuffix(strings.ToLower(root), ".tsx") {
+		lowerRoot := strings.ToLower(root)
+		if !strings.HasSuffix(lowerRoot, ".ts") && !strings.HasSuffix(lowerRoot, ".tsx") {
 			return nil, fmt.Errorf("file must have .ts or .tsx extension")
 		}
 		files = []string{root}
