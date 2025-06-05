@@ -13,7 +13,7 @@ import (
 type TsPathResolver struct {
 	paths       map[string][]string
 	projectRoot string
-	
+
 	// Cache compiled regexes to avoid recompilation
 	regexCache map[string]*regexp.Regexp
 	regexMutex sync.RWMutex
@@ -30,10 +30,10 @@ type TsConfig struct {
 func removeCommentLinesFromJson(tsConfigFileContents []byte) []byte {
 	var builder strings.Builder
 	inMultiLineComment := false
-	
+
 	// Pre-allocate approximate capacity to reduce allocations
 	builder.Grow(len(tsConfigFileContents))
-	
+
 	for _, line := range strings.Split(string(tsConfigFileContents), "\n") {
 		trimmedLine := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmedLine, "/*") {
@@ -92,12 +92,12 @@ func (t *TsPathResolver) ResolveImportPath(importingFileDir, importPath string) 
 
 	for alias, paths := range t.paths {
 		aliasPattern := "^" + strings.ReplaceAll(alias, "*", "(.*)") + "$"
-		
+
 		// Check cache first
 		t.regexMutex.RLock()
 		regexpAlias, exists := t.regexCache[aliasPattern]
 		t.regexMutex.RUnlock()
-		
+
 		if !exists {
 			// Compile and cache the regex
 			compiledRegex, err := regexp.Compile(aliasPattern)
@@ -109,7 +109,7 @@ func (t *TsPathResolver) ResolveImportPath(importingFileDir, importPath string) 
 			t.regexMutex.Unlock()
 			regexpAlias = compiledRegex
 		}
-		
+
 		if regexpAlias.MatchString(importPath) {
 			submatches := regexpAlias.FindStringSubmatch(importPath)
 			var fallbackPath string

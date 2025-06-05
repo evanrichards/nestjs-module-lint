@@ -10,18 +10,18 @@ import (
 
 var (
 	typescriptLang = typescript.GetLanguage()
-	
+
 	// Cached compiled queries
-	moduleImportQueryCache     *sitter.Query
-	importPathQueryCache       *sitter.Query
-	moduleExportQueryCache     *sitter.Query
-	moduleProviderQueryCache   *sitter.Query
-	
+	moduleImportQueryCache   *sitter.Query
+	importPathQueryCache     *sitter.Query
+	moduleExportQueryCache   *sitter.Query
+	moduleProviderQueryCache *sitter.Query
+
 	// Sync guards for one-time initialization
-	moduleImportQueryOnce     sync.Once
-	importPathQueryOnce       sync.Once
-	moduleExportQueryOnce     sync.Once
-	moduleProviderQueryOnce   sync.Once
+	moduleImportQueryOnce   sync.Once
+	importPathQueryOnce     sync.Once
+	moduleExportQueryOnce   sync.Once
+	moduleProviderQueryOnce sync.Once
 )
 
 //go:embed module-imports.query

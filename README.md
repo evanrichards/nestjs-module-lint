@@ -81,6 +81,24 @@ npx nestjs-module-lint import-lint src/app/app.module.ts
 npx nestjs-module-lint import-lint --json src/app/app.module.ts
 ```
 
+### Auto-Fix Unused Imports
+
+**Preview Changes:**
+```bash
+npx nestjs-module-lint import-lint src/app/app.module.ts
+```
+
+**Automatically Fix:**
+```bash
+npx nestjs-module-lint import-lint --fix src/app/app.module.ts
+```
+
+The `--fix` flag will:
+- Remove unused import statements from the top of files
+- Clean up the `imports: [...]` arrays in `@Module()` decorators  
+- Preserve formatting and handle both inline and multiline arrays
+- Support all import types: named, default, and aliased imports
+
 ### Command Options
 
 ```bash
@@ -89,6 +107,9 @@ nestjs-module-lint import-lint [flags] <path>
 Output Flags:
       --json        Output in JSON format
       --text        Output in text format (default)
+
+Fix Flags:
+      --fix         Automatically remove unused imports
 
 CI/CD Flags:
       --check       Check mode with pass/fail output (good for CI)
@@ -159,6 +180,7 @@ Add to your `package.json`:
 {
   "scripts": {
     "lint:modules": "nestjs-module-lint import-lint src/",
+    "lint:modules:fix": "nestjs-module-lint import-lint --fix src/",
     "lint:modules:json": "nestjs-module-lint import-lint --json src/"
   }
 }
@@ -318,6 +340,7 @@ Total number of modules with unused imports: 2
 
 ### ✅ Current Features
 - **Import Analysis**: Detect unused module imports in `@Module()` decorators
+- **Auto-Fix Capability**: Automatically remove unused imports with `--fix` flag
 - **Multiple Output Formats**: Text and JSON output support
 - **CI/CD Integration**: Standardized exit codes and check modes
 - **Cross-Platform**: Works on macOS, Linux, Windows
@@ -325,16 +348,6 @@ Total number of modules with unused imports: 2
 - **Performance Optimized**: Built with Go and tree-sitter for speed
 
 ### 🚧 Planned Features
-
-#### Auto-Fix Capability
-- **`--fix` Flag**: Automatically remove unused imports from module files
-  ```bash
-  # Preview changes
-  nestjs-module-lint import-lint src/
-  
-  # Apply fixes automatically  
-  nestjs-module-lint import-lint --fix src/
-  ```
   
 #### Export Analysis
 - **`export-lint` Command**: Find unused exports in NestJS modules

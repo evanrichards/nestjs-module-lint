@@ -28,6 +28,9 @@ Examples:
   # Basic usage
   nestjs-module-lint import-lint src/
 
+  # Automatically fix unused imports
+  nestjs-module-lint import-lint --fix src/
+
   # CI/CD usage with clear pass/fail
   nestjs-module-lint import-lint --check src/
 
@@ -35,6 +38,25 @@ Examples:
   nestjs-module-lint import-lint --exit-zero --quiet src/`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		// Handle fix mode separately
+		if fixMode {
+			for _, arg := range args {
+				// Validate argument
+				if strings.TrimSpace(arg) == "" {
+					fmt.Fprintf(os.Stderr, "Error: empty path provided\n")
+					os.Exit(2)
+				}
+
+				err := app.FixWorkflow(arg)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error fixing '%s': %v\n", arg, err)
+					os.Exit(2)
+				}
+			}
+			return
+		}
+
+		// Normal analysis mode
 		var allReports []*app.ModuleReport
 
 		for _, arg := range args {
@@ -85,6 +107,7 @@ var ofText bool
 var exitZero bool
 var checkMode bool
 var quiet bool
+var fixMode bool
 
 func init() {
 	rootCmd.AddCommand(importLintCmd)
@@ -98,5 +121,10 @@ func init() {
 	importLintCmd.Flags().BoolVar(&exitZero, "exit-zero", false, "Exit with code 0 even when issues are found")
 	importLintCmd.Flags().BoolVar(&quiet, "quiet", false, "Suppress output (useful with --exit-zero)")
 
+	// Fix flags
+	importLintCmd.Flags().BoolVar(&fixMode, "fix", false, "Automatically remove unused imports")
+
 	importLintCmd.MarkFlagsMutuallyExclusive("json", "text")
+	importLintCmd.MarkFlagsMutuallyExclusive("fix", "json")
+	importLintCmd.MarkFlagsMutuallyExclusive("fix", "check")
 }
