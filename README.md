@@ -39,7 +39,7 @@ npm install -g nestjs-module-lint
 
 ### Go Install (Alternative)
 
-If you have Go 1.22+ installed:
+If you have Go 1.21+ installed:
 
 ```bash
 go install github.com/evanrichards/nestjs-module-lint@latest
@@ -258,7 +258,7 @@ go build -o bin/nestjs-module-lint .
 The project uses automated CI/CD with comprehensive testing:
 
 - **Multi-OS Testing**: Ubuntu, Windows, macOS
-- **Multi-Go Version**: Go 1.20, 1.21, 1.22
+- **Multi-Go Version**: Go 1.21, 1.22
 - **Automated Linting**: golangci-lint with latest rules
 - **Benchmark Testing**: Performance regression detection
 
