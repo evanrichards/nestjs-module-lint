@@ -3,7 +3,7 @@ package pathresolver_test
 import (
 	"testing"
 
-	pathresolver "github.com/loop-payments/nestjs-module-lint/internal/path-resolver"
+	pathresolver "github.com/evanrichards/nestjs-module-lint/internal/path-resolver"
 )
 
 func TestResolveImportPath(t *testing.T) {

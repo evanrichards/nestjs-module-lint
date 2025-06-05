@@ -1,4 +1,4 @@
-module github.com/loop-payments/nestjs-module-lint
+module github.com/evanrichards/nestjs-module-lint
 
 go 1.22.2
 

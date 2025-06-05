@@ -10,13 +10,13 @@
     "analyzer",
     "typescript"
   ],
-  "homepage": "https://github.com/loop-payments/nestjs-module-lint",
+  "homepage": "https://github.com/evanrichards/nestjs-module-lint",
   "bugs": {
-    "url": "https://github.com/loop-payments/nestjs-module-lint/issues"
+    "url": "https://github.com/evanrichards/nestjs-module-lint/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/loop-payments/nestjs-module-lint.git"
+    "url": "git+https://github.com/evanrichards/nestjs-module-lint.git"
   },
   "license": "MIT",
   "author": "Evan Richards",

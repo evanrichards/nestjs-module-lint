@@ -2,7 +2,7 @@ package parser_test
 
 import (
 	"context"
-	"github.com/loop-payments/nestjs-module-lint/internal/parser"
+	"github.com/evanrichards/nestjs-module-lint/internal/parser"
 	"github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/typescript/typescript"
 	"testing"

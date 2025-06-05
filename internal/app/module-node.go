@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/loop-payments/nestjs-module-lint/internal/parser"
-	pathresolver "github.com/loop-payments/nestjs-module-lint/internal/path-resolver"
+	"github.com/evanrichards/nestjs-module-lint/internal/parser"
+	pathresolver "github.com/evanrichards/nestjs-module-lint/internal/path-resolver"
 	sitter "github.com/smacker/go-tree-sitter"
 )
 

@@ -119,7 +119,7 @@ async function install() {
 
   try {
     // First, try to download pre-built binary
-    const downloadUrl = `https://github.com/loop-payments/nestjs-module-lint/releases/download/v${version}/${binaryName}`;
+    const downloadUrl = `https://github.com/evanrichards/nestjs-module-lint/releases/download/v${version}/${binaryName}`;
     console.log(`Downloading binary from ${downloadUrl}...`);
     
     await downloadBinary(downloadUrl, binaryPath);

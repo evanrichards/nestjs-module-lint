@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/loop-payments/nestjs-module-lint/internal/app"
+	"github.com/evanrichards/nestjs-module-lint/internal/app"
 	"github.com/spf13/cobra"
 )
 
