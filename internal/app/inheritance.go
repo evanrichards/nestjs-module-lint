@@ -24,19 +24,19 @@ func AnalyzeClassInheritance(sourceCode []byte) ([]ClassInheritanceInfo, error) 
 	// Use a simpler regex-based approach for now since tree-sitter query is complex
 	source := string(sourceCode)
 	var inheritanceInfo []ClassInheritanceInfo
-	
+
 	// Look for class declarations with extends
 	classPattern := regexp.MustCompile(`export\s+class\s+(\w+)\s+extends\s+(\w+)\s*{([^}]*)`)
 	matches := classPattern.FindAllStringSubmatch(source, -1)
-	
+
 	for _, match := range matches {
 		if len(match) >= 4 {
 			className := match[1]
 			baseClass := match[2]
 			classBody := match[3]
-			
+
 			hasConstructor := strings.Contains(classBody, "constructor(")
-			
+
 			inheritanceInfo = append(inheritanceInfo, ClassInheritanceInfo{
 				ClassName:      className,
 				BaseClass:      baseClass,
@@ -44,19 +44,19 @@ func AnalyzeClassInheritance(sourceCode []byte) ([]ClassInheritanceInfo, error) 
 			})
 		}
 	}
-	
+
 	// Also check for non-exported classes
 	nonExportPattern := regexp.MustCompile(`(?:^|\n)\s*class\s+(\w+)\s+extends\s+(\w+)\s*{([^}]*)`)
 	nonExportMatches := nonExportPattern.FindAllStringSubmatch(source, -1)
-	
+
 	for _, match := range nonExportMatches {
 		if len(match) >= 4 {
 			className := match[1]
 			baseClass := match[2]
 			classBody := match[3]
-			
+
 			hasConstructor := strings.Contains(classBody, "constructor(")
-			
+
 			inheritanceInfo = append(inheritanceInfo, ClassInheritanceInfo{
 				ClassName:      className,
 				BaseClass:      baseClass,
@@ -124,11 +124,11 @@ func getInheritedDependencies(className string, filePath string, pathResolver *p
 
 	// Combine dependencies, avoiding duplicates
 	dependencyMap := make(map[string]FileImportNode)
-	
+
 	for _, dep := range baseDependencies {
 		dependencyMap[dep.name] = dep
 	}
-	
+
 	for _, dep := range directDependencies {
 		// Skip the base class import itself
 		if dep.name != targetInheritance.BaseClass {
@@ -197,7 +197,7 @@ func getFileImportsFromNode(n *sitter.Node, sourceCode []byte, pathResolver *pat
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var fileImportNodes []FileImportNode
 	fileDir := filepath.Dir(filePath)
 	for importName, importPath := range fileImports {

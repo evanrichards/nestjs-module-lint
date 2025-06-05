@@ -8,10 +8,10 @@ import (
 
 func TestInheritanceDetection(t *testing.T) {
 	tests := []struct {
-		name               string
-		sourceCode         string
-		expectedClass      string
-		expectedBaseClass  string
+		name                   string
+		sourceCode             string
+		expectedClass          string
+		expectedBaseClass      string
 		expectedHasConstructor bool
 	}{
 		{
@@ -26,8 +26,8 @@ export class UserService extends BaseService {
     return 'test';
   }
 }`,
-			expectedClass:      "UserService",
-			expectedBaseClass:  "BaseService",
+			expectedClass:          "UserService",
+			expectedBaseClass:      "BaseService",
 			expectedHasConstructor: false,
 		},
 		{
@@ -43,8 +43,8 @@ export class UserService extends BaseService {
     super();
   }
 }`,
-			expectedClass:      "UserService",
-			expectedBaseClass:  "BaseService",
+			expectedClass:          "UserService",
+			expectedBaseClass:      "BaseService",
 			expectedHasConstructor: true,
 		},
 		{
@@ -57,8 +57,8 @@ import { DatabaseService } from './database.service';
 export class UserService {
   constructor(private db: DatabaseService) {}
 }`,
-			expectedClass:      "UserService",
-			expectedBaseClass:  "",
+			expectedClass:          "UserService",
+			expectedBaseClass:      "",
 			expectedHasConstructor: true,
 		},
 	}

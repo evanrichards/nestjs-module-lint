@@ -145,15 +145,15 @@ func RunForModuleFile(
 	if err != nil {
 		return nil, errors.Join(errors.New("could not read the input file, does it exist?"), err)
 	}
-	
+
 	// Parse ignore comments
 	ignoreInfo := ParseIgnoreComments(sourceCode)
-	
+
 	// If the entire file is ignored, return empty results
 	if ignoreInfo.FileIgnored {
 		return []*ModuleReport{}, nil
 	}
-	
+
 	n, err := sitter.ParseCtx(context.Background(), sourceCode, lang)
 	if err != nil {
 		return nil, errors.Join(errors.New("could not parse the input file, is it valid typescript?"), err)
@@ -178,10 +178,10 @@ func RunForModuleFile(
 	moduleReports := make([]*ModuleReport, 0)
 	for module, imports := range importsByModule {
 		providerControllers, ok := providerControllersByModule[module]
-		
+
 		// Get exports for this module to check for re-export patterns
 		moduleExports, hasExports := exportsByModule[module]
-		
+
 		if !ok {
 			// Convert absolute path to relative path from project root
 			relativePath, err := filepath.Rel(cwd, qualifiedPathToModule)
@@ -189,15 +189,15 @@ func RunForModuleFile(
 				// If we can't get relative path, fall back to the original path
 				relativePath = qualifiedPathToModule
 			}
-			
+
 			// Filter out ignored imports
 			filteredImports := filterIgnoredImports(imports, ignoreInfo)
-			
+
 			// Filter out re-exported imports
 			if hasExports {
 				filteredImports = filterReExportedImports(filteredImports, moduleExports)
 			}
-			
+
 			// Only create a report if there are still unused imports after filtering
 			if len(filteredImports) > 0 {
 				moduleReports = append(moduleReports, &ModuleReport{
@@ -213,7 +213,7 @@ func RunForModuleFile(
 		if hasExports {
 			moduleExportsForModule = moduleExports
 		}
-		
+
 		moduleReport, err := runForModule(module, imports, providerControllers, fileImports, pathResolver, qualifiedPathToModule, ignoreInfo, moduleExportsForModule)
 		if err != nil {
 			return nil, err
@@ -246,22 +246,22 @@ func runForModule(
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Filter out ignored imports
 	filteredImports := filterIgnoredImports(unecessaryInputs, ignoreInfo)
-	
+
 	// Filter out re-exported imports
 	if len(moduleExports) > 0 {
 		filteredImports = filterReExportedImports(filteredImports, moduleExports)
 	}
-	
+
 	// Convert absolute path to relative path from project root
 	relativePath, err := filepath.Rel(cwd, qualifiedPathToModule)
 	if err != nil {
 		// If we can't get relative path, fall back to the original path
 		relativePath = qualifiedPathToModule
 	}
-	
+
 	return &ModuleReport{
 		ModuleName:         moduleName,
 		Path:               relativePath,

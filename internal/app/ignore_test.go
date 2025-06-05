@@ -8,11 +8,11 @@ import (
 
 func TestParseIgnoreComments(t *testing.T) {
 	tests := []struct {
-		name               string
-		sourceCode         string
-		expectedFileIgnored bool
+		name                   string
+		sourceCode             string
+		expectedFileIgnored    bool
 		expectedIgnoredModules map[string]bool
-		expectedIgnoredLines map[int]bool
+		expectedIgnoredLines   map[int]bool
 	}{
 		{
 			name: "file-level ignore",
@@ -24,9 +24,9 @@ import { UnusedModule } from './unused.module';
   imports: [UnusedModule],
 })
 export class TestModule {}`,
-			expectedFileIgnored: true,
+			expectedFileIgnored:    true,
 			expectedIgnoredModules: map[string]bool{},
-			expectedIgnoredLines: map[int]bool{},
+			expectedIgnoredLines:   map[int]bool{},
 		},
 		{
 			name: "line-level ignore with module name",
@@ -43,9 +43,9 @@ import { UnusedModuleB } from './unused-b.module';
   ],
 })
 export class TestModule {}`,
-			expectedFileIgnored: false,
+			expectedFileIgnored:    false,
 			expectedIgnoredModules: map[string]bool{"UnusedModuleA": true},
-			expectedIgnoredLines: map[int]bool{9: true},
+			expectedIgnoredLines:   map[int]bool{9: true},
 		},
 		{
 			name: "multiple line-level ignores",
@@ -78,9 +78,9 @@ import { UnusedModule } from './unused.module';
   imports: [UnusedModule],
 })
 export class TestModule {}`,
-			expectedFileIgnored: false,
+			expectedFileIgnored:    false,
 			expectedIgnoredModules: map[string]bool{},
-			expectedIgnoredLines: map[int]bool{},
+			expectedIgnoredLines:   map[int]bool{},
 		},
 		{
 			name: "ignore with spacing variations",
@@ -107,18 +107,18 @@ export class TestModule {}`,
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			info := app.ParseIgnoreComments([]byte(tt.sourceCode))
-			
+
 			if info.FileIgnored != tt.expectedFileIgnored {
 				t.Errorf("Expected FileIgnored %v, got %v", tt.expectedFileIgnored, info.FileIgnored)
 			}
-			
+
 			// Check ignored modules
 			for module, expected := range tt.expectedIgnoredModules {
 				if info.ShouldIgnoreModule(module) != expected {
 					t.Errorf("Expected module %s to be ignored: %v, got %v", module, expected, info.ShouldIgnoreModule(module))
 				}
 			}
-			
+
 			// Check ignored lines
 			for line, expected := range tt.expectedIgnoredLines {
 				if info.IgnoredLines[line] != expected {

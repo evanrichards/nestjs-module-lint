@@ -59,30 +59,30 @@ func TestFilterReExportedImports(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Access the unexported function through a test helper
 			result := filterReExportedImportsHelper(tt.imports, tt.exports)
-			
+
 			if len(result) != len(tt.expected) {
-				t.Errorf("Expected %d imports, got %d. Expected: %v, Got: %v", 
+				t.Errorf("Expected %d imports, got %d. Expected: %v, Got: %v",
 					len(tt.expected), len(result), tt.expected, result)
 				return
 			}
-			
+
 			// Convert to sets for comparison (order doesn't matter)
 			expectedSet := make(map[string]bool)
 			for _, exp := range tt.expected {
 				expectedSet[exp] = true
 			}
-			
+
 			resultSet := make(map[string]bool)
 			for _, res := range result {
 				resultSet[res] = true
 			}
-			
+
 			for exp := range expectedSet {
 				if !resultSet[exp] {
 					t.Errorf("Expected import %s not found in result", exp)
 				}
 			}
-			
+
 			for res := range resultSet {
 				if !expectedSet[res] {
 					t.Errorf("Unexpected import %s found in result", res)
@@ -97,13 +97,13 @@ func filterReExportedImportsHelper(imports []string, exports []string) []string 
 	if len(exports) == 0 {
 		return imports
 	}
-	
+
 	// Create a set of exported modules for efficient lookup
 	exportedModules := make(map[string]bool)
 	for _, export := range exports {
 		exportedModules[export] = true
 	}
-	
+
 	// Filter out imports that are also exported
 	var filtered []string
 	for _, imp := range imports {
@@ -111,6 +111,6 @@ func filterReExportedImportsHelper(imports []string, exports []string) []string 
 			filtered = append(filtered, imp)
 		}
 	}
-	
+
 	return filtered
 }

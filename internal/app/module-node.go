@@ -154,7 +154,7 @@ func getFileImportsForFile(filePath string, pathResolver *pathresolver.TsPathRes
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// First, try to find the class name in this file
 	className := extractClassNameFromFile(sourceCode)
 	if className != "" {
@@ -162,7 +162,7 @@ func getFileImportsForFile(filePath string, pathResolver *pathresolver.TsPathRes
 		visited := make(map[string]bool)
 		return getInheritedDependencies(className, filePath, pathResolver, visited)
 	}
-	
+
 	// Fall back to normal import analysis
 	return getFileImportsFromNode(n, sourceCode, pathResolver, filePath)
 }
@@ -172,16 +172,16 @@ func extractClassNameFromFile(sourceCode []byte) string {
 	// Look for @Injectable() decorated classes
 	lines := strings.Split(string(sourceCode), "\n")
 	inInjectableClass := false
-	
+
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
-		
+
 		// Look for @Injectable() decorator
 		if strings.Contains(trimmed, "@Injectable()") {
 			inInjectableClass = true
 			continue
 		}
-		
+
 		// If we found @Injectable, look for the next export class declaration
 		if inInjectableClass && strings.HasPrefix(trimmed, "export class ") {
 			// Extract class name
@@ -198,13 +198,13 @@ func extractClassNameFromFile(sourceCode []byte) string {
 				return className
 			}
 		}
-		
+
 		// Reset if we hit another decorator or class without finding what we need
 		if strings.HasPrefix(trimmed, "@") || strings.HasPrefix(trimmed, "export class ") {
 			inInjectableClass = false
 		}
 	}
-	
+
 	return ""
 }
 
