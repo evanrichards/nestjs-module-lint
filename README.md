@@ -254,6 +254,58 @@ In this example, `LegacyModule` and `OptionalModule` won't be flagged as unused,
 
 **Note**: The ignore comment must be on the same line as the import for line-level ignores to work.
 
+## 🔄 Re-Export Pattern Detection
+
+The tool intelligently handles NestJS "barrel" or "aggregator" modules that import and re-export other modules:
+
+### Barrel Module Pattern
+
+```typescript
+import { Module } from '@nestjs/common';
+import { UsersModule } from './users/users.module';
+import { ProductsModule } from './products/products.module';
+import { OrdersModule } from './orders/orders.module';
+
+@Module({
+  imports: [
+    UsersModule,
+    ProductsModule, 
+    OrdersModule,
+  ],
+  exports: [
+    UsersModule,     // Re-exported - won't be flagged as unused
+    ProductsModule,  // Re-exported - won't be flagged as unused
+    OrdersModule,    // Re-exported - won't be flagged as unused
+  ],
+})
+export class ApiModule {}
+```
+
+In this example, none of the imported modules will be flagged as unused because they're all re-exported. The tool recognizes this common NestJS pattern where modules are imported solely to be re-exported.
+
+### Partial Re-Export Pattern
+
+```typescript
+@Module({
+  imports: [
+    PublicModule,    // Re-exported - won't be flagged
+    InternalModule,  // Used by providers - won't be flagged  
+    UnusedModule,    // Not used or re-exported - WILL be flagged
+  ],
+  providers: [SomeService], // Assume SomeService uses InternalModule
+  exports: [
+    PublicModule,    // Re-exported for external use
+    // InternalModule not re-exported (internal use only)
+  ],
+})
+export class MixedModule {}
+```
+
+The tool correctly identifies:
+- ✅ `PublicModule`: Safe (re-exported)
+- ✅ `InternalModule`: Safe (used by providers)
+- ❌ `UnusedModule`: Flagged as unused
+
 ## 🔄 Integration
 
 ### Package.json Scripts
@@ -424,6 +476,7 @@ Total number of modules with unused imports: 2
 
 ### ✅ Current Features
 - **Import Analysis**: Detect unused module imports in `@Module()` decorators
+- **Re-Export Pattern Detection**: Smart handling of modules that import and re-export other modules (barrel/aggregator pattern)
 - **Inheritance-Aware Analysis**: Automatically detects dependencies through class inheritance chains
 - **Auto-Fix Capability**: Automatically remove unused imports with `--fix` flag
 - **Ignore Comments**: File-level and line-level ignore functionality
@@ -434,7 +487,38 @@ Total number of modules with unused imports: 2
 - **Performance Optimized**: Built with Go and tree-sitter for speed
 
 ### 🚧 Planned Features
-  
+
+#### Object Provider Pattern Analysis
+- **Advanced Provider Detection**: Recognize classes used in object-based provider definitions
+  ```typescript
+  // These patterns should be detected as "used":
+  @Module({
+    providers: [
+      {
+        provide: 'SERVICE_TOKEN',
+        useClass: MyService, // MyService should be considered used
+      },
+      {
+        provide: MyInterface,
+        useClass: MyImplementation, // MyImplementation should be considered used
+      },
+      {
+        provide: 'CONFIG',
+        useValue: myConfigObject, // myConfigObject should be considered used
+      },
+      {
+        provide: 'FACTORY',
+        useFactory: createService, // createService should be considered used
+        inject: [DatabaseService], // DatabaseService should be considered used
+      }
+    ],
+  })
+  export class AppModule {}
+  ```
+  - **Provider Object Parsing**: Detect `useClass`, `useValue`, `useFactory` patterns
+  - **Inject Array Analysis**: Recognize dependencies in `inject` arrays for factories
+  - **Token Recognition**: Handle both string tokens and class tokens in `provide` field
+
 #### Export Analysis
 - **`export-lint` Command**: Find unused exports in NestJS modules
   ```bash

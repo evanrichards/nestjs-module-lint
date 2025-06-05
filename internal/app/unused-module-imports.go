@@ -170,10 +170,18 @@ func RunForModuleFile(
 	if err != nil {
 		return nil, err
 	}
+	exportsByModule, err := parser.GetExportsByModuleFromFile(n, sourceCode)
+	if err != nil {
+		return nil, err
+	}
 
 	moduleReports := make([]*ModuleReport, 0)
 	for module, imports := range importsByModule {
 		providerControllers, ok := providerControllersByModule[module]
+		
+		// Get exports for this module to check for re-export patterns
+		moduleExports, hasExports := exportsByModule[module]
+		
 		if !ok {
 			// Convert absolute path to relative path from project root
 			relativePath, err := filepath.Rel(cwd, qualifiedPathToModule)
@@ -184,6 +192,11 @@ func RunForModuleFile(
 			
 			// Filter out ignored imports
 			filteredImports := filterIgnoredImports(imports, ignoreInfo)
+			
+			// Filter out re-exported imports
+			if hasExports {
+				filteredImports = filterReExportedImports(filteredImports, moduleExports)
+			}
 			
 			// Only create a report if there are still unused imports after filtering
 			if len(filteredImports) > 0 {
@@ -196,7 +209,12 @@ func RunForModuleFile(
 			continue
 		}
 
-		moduleReport, err := runForModule(module, imports, providerControllers, fileImports, pathResolver, qualifiedPathToModule, ignoreInfo)
+		var moduleExportsForModule []string
+		if hasExports {
+			moduleExportsForModule = moduleExports
+		}
+		
+		moduleReport, err := runForModule(module, imports, providerControllers, fileImports, pathResolver, qualifiedPathToModule, ignoreInfo, moduleExportsForModule)
 		if err != nil {
 			return nil, err
 		}
@@ -221,6 +239,7 @@ func runForModule(
 	pathResolver *pathresolver.TsPathResolver,
 	qualifiedPathToModule string,
 	ignoreInfo *IgnoreInfo,
+	moduleExports []string,
 ) (*ModuleReport, error) {
 	moduleNode := NewModuleNode(moduleName, importNames, providerControllers, fileImports, pathResolver)
 	unecessaryInputs, err := moduleNode.Check()
@@ -230,6 +249,11 @@ func runForModule(
 	
 	// Filter out ignored imports
 	filteredImports := filterIgnoredImports(unecessaryInputs, ignoreInfo)
+	
+	// Filter out re-exported imports
+	if len(moduleExports) > 0 {
+		filteredImports = filterReExportedImports(filteredImports, moduleExports)
+	}
 	
 	// Convert absolute path to relative path from project root
 	relativePath, err := filepath.Rel(cwd, qualifiedPathToModule)

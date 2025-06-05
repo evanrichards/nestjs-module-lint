@@ -76,3 +76,26 @@ func filterIgnoredImports(imports []string, ignoreInfo *IgnoreInfo) []string {
 	
 	return filtered
 }
+
+// filterReExportedImports removes modules from imports list that are also exported (re-export pattern)
+func filterReExportedImports(imports []string, exports []string) []string {
+	if len(exports) == 0 {
+		return imports // No exports, so no re-exports to filter
+	}
+	
+	// Create a set of exported modules for efficient lookup
+	exportedModules := make(map[string]bool)
+	for _, export := range exports {
+		exportedModules[export] = true
+	}
+	
+	// Filter out imports that are also exported
+	var filtered []string
+	for _, imp := range imports {
+		if !exportedModules[imp] {
+			filtered = append(filtered, imp)
+		}
+	}
+	
+	return filtered
+}
