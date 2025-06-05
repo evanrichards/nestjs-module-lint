@@ -22,3 +22,12 @@ go.work
 
 # Build output
 nestjs-module-lint
+bin/
+dist/
+
+# npm package files
+*.tgz
+node_modules/
+
+# Test directories
+test-installation/

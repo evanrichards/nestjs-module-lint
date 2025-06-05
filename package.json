@@ -1,0 +1,49 @@
+{
+  "name": "nestjs-module-lint",
+  "version": "0.1.0",
+  "description": "A linter for NestJS modules to detect unused imports and analyze module dependencies",
+  "keywords": [
+    "nestjs",
+    "lint",
+    "module",
+    "dependency",
+    "analyzer",
+    "typescript"
+  ],
+  "homepage": "https://github.com/loop-payments/nestjs-module-lint",
+  "bugs": {
+    "url": "https://github.com/loop-payments/nestjs-module-lint/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loop-payments/nestjs-module-lint.git"
+  },
+  "license": "MIT",
+  "author": "Evan Richards",
+  "main": "index.js",
+  "bin": {
+    "nestjs-module-lint": "./bin/nestjs-module-lint"
+  },
+  "files": [
+    "scripts/",
+    "index.js"
+  ],
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

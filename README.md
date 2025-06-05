@@ -16,11 +16,37 @@ it helps maintain a clean and efficient codebase.
 
 ### Prerequisites
 
-- Go 1.15 or higher
+- Node.js 14.0 or higher
 
 ### Installation
 
-Clone the repository and build the binary:
+Install using npm:
+
+```bash
+npm install --save-dev nestjs-module-lint
+```
+
+Or using Yarn:
+
+```bash
+yarn add --dev nestjs-module-lint
+```
+
+For global installation:
+
+```bash
+npm install -g nestjs-module-lint
+```
+
+### Alternative Installation Methods
+
+If you have Go installed, you can also install directly from source:
+
+```bash
+go install github.com/loop-payments/nestjs-module-lint@latest
+```
+
+Or clone and build manually:
 
 ```bash
 git clone https://github.com/loop-payments/nestjs-module-lint.git
@@ -28,23 +54,30 @@ cd nestjs-module-lint
 go build -o nestjs-module-lint .
 ```
 
-Alternatively, you can install it directly using Go:
+## Usage
 
-```bash
-go install github.com/loop-payments/nestjs-module-lint@latest
-```
-
-Usage
 Run the linter by specifying the path to a NestJS module file:
 
 ```bash
-./nestjs-module-lint <path-to-module>
+npx nestjs-module-lint <path-to-module>
 ```
 
-Example
+Or with Yarn:
 
 ```bash
-./nestjs-module-lint src/app/app.module.ts
+yarn nestjs-module-lint <path-to-module>
+```
+
+If installed globally:
+
+```bash
+nestjs-module-lint <path-to-module>
+```
+
+### Example
+
+```bash
+npx nestjs-module-lint src/app/app.module.ts
 ```
 
 This command will analyze the specified module and report any unused imports

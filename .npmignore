@@ -1,0 +1,43 @@
+# Source files
+*.go
+go.mod
+go.sum
+
+# Directories
+cmd/
+internal/
+dist/
+
+# Test files
+*_test.go
+*.test
+test.ts
+
+# Git and CI
+.git/
+.github/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts (except bin/)
+*.exe
+*.dll
+*.so
+*.dylib
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Binary directory (will be populated by postinstall)
+bin/
+
+# Keep only what's needed for npm package
+# scripts/ - contains install scripts
+# index.js - entry point
+# package.json
