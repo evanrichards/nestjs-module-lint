@@ -66,14 +66,7 @@ Examples:
 				os.Exit(2)
 			}
 
-			var reports []*app.ModuleReport
-			var err error
-
-			if useNewArchitecture {
-				reports, err = app.AnalyzePathWithNewArchitecture(arg)
-			} else {
-				reports, err = app.AnalyzePath(arg)
-			}
+			reports, err := app.AnalyzePath(arg)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error analyzing '%s': %v\n", arg, err)
 				os.Exit(2) // Exit code 2 for execution errors
@@ -115,7 +108,6 @@ var exitZero bool
 var checkMode bool
 var quiet bool
 var fixMode bool
-var useNewArchitecture bool
 
 func init() {
 	rootCmd.AddCommand(importLintCmd)
@@ -131,9 +123,6 @@ func init() {
 
 	// Fix flags
 	importLintCmd.Flags().BoolVar(&fixMode, "fix", false, "Automatically remove unused imports")
-
-	// Architecture flags
-	importLintCmd.Flags().BoolVar(&useNewArchitecture, "new-arch", false, "Use new analysis architecture (experimental)")
 
 	importLintCmd.MarkFlagsMutuallyExclusive("json", "text")
 	importLintCmd.MarkFlagsMutuallyExclusive("fix", "json")
