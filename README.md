@@ -314,6 +314,77 @@ Total number of modules with unused imports: 2
 ]
 ```
 
+## 🗺️ Features & Roadmap
+
+### ✅ Current Features
+- **Import Analysis**: Detect unused module imports in `@Module()` decorators
+- **Multiple Output Formats**: Text and JSON output support
+- **CI/CD Integration**: Standardized exit codes and check modes
+- **Cross-Platform**: Works on macOS, Linux, Windows
+- **TypeScript Path Mapping**: Full support for tsconfig.json paths
+- **Performance Optimized**: Built with Go and tree-sitter for speed
+
+### 🚧 Planned Features
+
+#### Auto-Fix Capability
+- **`--fix` Flag**: Automatically remove unused imports from module files
+  ```bash
+  # Preview changes
+  nestjs-module-lint import-lint src/
+  
+  # Apply fixes automatically  
+  nestjs-module-lint import-lint --fix src/
+  ```
+  
+#### Export Analysis
+- **`export-lint` Command**: Find unused exports in NestJS modules
+  ```bash
+  # Find exports that are never imported by other modules
+  nestjs-module-lint export-lint src/
+  
+  # Combined import + export analysis
+  nestjs-module-lint lint src/
+  ```
+
+#### Ignore Comments
+- **File-level Ignores**: Skip analysis for specific files
+  ```typescript
+  // nestjs-module-lint-disable-file
+  @Module({
+    imports: [SomeModuleWeWantToKeep], // This won't be flagged
+  })
+  export class LegacyModule {}
+  ```
+  
+- **Line-level Ignores**: Skip specific imports
+  ```typescript
+  @Module({
+    imports: [
+      RequiredModule,
+      OptionalModule, // nestjs-module-lint-disable-line
+    ],
+  })
+  export class MyModule {}
+  ```
+
+#### Performance & Benchmarking
+- **Benchmarking Suite**: Comprehensive performance testing framework
+  - Large codebase simulation (1000+ modules)
+  - Memory usage profiling
+  - Concurrent processing benchmarks
+  - Performance regression detection in CI
+  ```bash
+  make bench-all    # Run full benchmark suite
+  make bench-memory # Memory usage analysis
+  make bench-large  # Large codebase simulation
+  ```
+
+#### Advanced Analysis
+- **Dependency Graph**: Visualize module dependencies
+- **Circular Dependency Detection**: Find circular imports between modules
+- **Dead Code Analysis**: Find modules that are never imported anywhere
+- **Module Health Score**: Overall module dependency health metrics
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
