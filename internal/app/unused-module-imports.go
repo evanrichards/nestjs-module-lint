@@ -3,7 +3,6 @@ package app
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/evanrichards/nestjs-module-lint/internal/analysis"
@@ -14,13 +13,6 @@ import (
 	"github.com/smacker/go-tree-sitter/typescript/typescript"
 )
 
-// FileImportNode represents a file import for compatibility with inheritance analysis
-type FileImportNode struct {
-	path     string
-	name     string
-	fullpath string
-}
-
 // getTypescriptLanguage returns the TypeScript language instance
 func getTypescriptLanguage() *sitter.Language {
 	return typescript.GetLanguage()
@@ -29,33 +21,6 @@ func getTypescriptLanguage() *sitter.Language {
 // getWorkingDirectory returns the current working directory
 func getWorkingDirectory() (string, error) {
 	return os.Getwd()
-}
-
-// resolveFilePath converts relative paths to absolute paths based on working directory
-func resolveFilePath(filePath string) (string, string, error) {
-	cwd, err := getWorkingDirectory()
-	if err != nil {
-		return "", "", err
-	}
-
-	var qualifiedPath string
-	if filepath.IsAbs(filePath) {
-		qualifiedPath = filePath
-	} else {
-		qualifiedPath = filepath.Join(cwd, filePath)
-	}
-
-	return qualifiedPath, cwd, nil
-}
-
-// getRelativePath returns a relative path from the working directory, falling back to absolute path if conversion fails
-func getRelativePath(absolutePath, workingDir string) string {
-	relativePath, err := filepath.Rel(workingDir, absolutePath)
-	if err != nil {
-		// If we can't get relative path, fall back to the original path
-		return absolutePath
-	}
-	return relativePath
 }
 
 // AnalyzePath analyzes a file or directory for unused module imports
