@@ -145,6 +145,15 @@ func RunForModuleFile(
 	if err != nil {
 		return nil, errors.Join(errors.New("could not read the input file, does it exist?"), err)
 	}
+	
+	// Parse ignore comments
+	ignoreInfo := ParseIgnoreComments(sourceCode)
+	
+	// If the entire file is ignored, return empty results
+	if ignoreInfo.FileIgnored {
+		return []*ModuleReport{}, nil
+	}
+	
 	n, err := sitter.ParseCtx(context.Background(), sourceCode, lang)
 	if err != nil {
 		return nil, errors.Join(errors.New("could not parse the input file, is it valid typescript?"), err)
@@ -173,19 +182,27 @@ func RunForModuleFile(
 				relativePath = qualifiedPathToModule
 			}
 			
-			moduleReports = append(moduleReports, &ModuleReport{
-				ModuleName:         module,
-				Path:               relativePath,
-				UnnecessaryImports: imports,
-			})
+			// Filter out ignored imports
+			filteredImports := filterIgnoredImports(imports, ignoreInfo)
+			
+			// Only create a report if there are still unused imports after filtering
+			if len(filteredImports) > 0 {
+				moduleReports = append(moduleReports, &ModuleReport{
+					ModuleName:         module,
+					Path:               relativePath,
+					UnnecessaryImports: filteredImports,
+				})
+			}
 			continue
 		}
 
-		moduleReport, err := runForModule(module, imports, providerControllers, fileImports, pathResolver, qualifiedPathToModule)
+		moduleReport, err := runForModule(module, imports, providerControllers, fileImports, pathResolver, qualifiedPathToModule, ignoreInfo)
 		if err != nil {
 			return nil, err
 		}
-		moduleReports = append(moduleReports, moduleReport)
+		if moduleReport != nil && len(moduleReport.UnnecessaryImports) > 0 {
+			moduleReports = append(moduleReports, moduleReport)
+		}
 	}
 	return moduleReports, nil
 }
@@ -203,12 +220,17 @@ func runForModule(
 	fileImports []FileImportNode,
 	pathResolver *pathresolver.TsPathResolver,
 	qualifiedPathToModule string,
+	ignoreInfo *IgnoreInfo,
 ) (*ModuleReport, error) {
 	moduleNode := NewModuleNode(moduleName, importNames, providerControllers, fileImports, pathResolver)
 	unecessaryInputs, err := moduleNode.Check()
 	if err != nil {
 		return nil, err
 	}
+	
+	// Filter out ignored imports
+	filteredImports := filterIgnoredImports(unecessaryInputs, ignoreInfo)
+	
 	// Convert absolute path to relative path from project root
 	relativePath, err := filepath.Rel(cwd, qualifiedPathToModule)
 	if err != nil {
@@ -219,7 +241,7 @@ func runForModule(
 	return &ModuleReport{
 		ModuleName:         moduleName,
 		Path:               relativePath,
-		UnnecessaryImports: unecessaryInputs,
+		UnnecessaryImports: filteredImports,
 	}, nil
 }
 

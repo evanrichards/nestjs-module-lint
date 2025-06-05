@@ -208,6 +208,52 @@ export class UserModule {}
 
 The tool recognizes that `UserService` inherits from `BaseService`, which requires `DatabaseService`, so `DatabaseModule` is correctly identified as needed.
 
+## 🚫 Ignore Comments
+
+You can disable linting for specific files or individual imports using special comments:
+
+### File-Level Ignores
+
+Skip analysis for an entire file by adding a comment at the top:
+
+```typescript
+// nestjs-module-lint-disable-file
+import { Module } from '@nestjs/common';
+import { LegacyModuleA } from './legacy-a.module';
+import { LegacyModuleB } from './legacy-b.module';
+
+@Module({
+  imports: [LegacyModuleA, LegacyModuleB], // Neither will be flagged
+  providers: [],
+})
+export class LegacyModule {}
+```
+
+### Line-Level Ignores
+
+Skip specific imports by adding a comment on the same line:
+
+```typescript
+import { Module } from '@nestjs/common';
+import { RequiredModule } from './required.module';
+import { LegacyModule } from './legacy.module';
+import { OptionalModule } from './optional.module';
+
+@Module({
+  imports: [
+    RequiredModule,
+    LegacyModule,    // nestjs-module-lint-disable-line
+    OptionalModule,  // nestjs-module-lint-disable-line
+  ],
+  providers: [],
+})
+export class MyModule {}
+```
+
+In this example, `LegacyModule` and `OptionalModule` won't be flagged as unused, even if they're not actually used by the module's providers or controllers.
+
+**Note**: The ignore comment must be on the same line as the import for line-level ignores to work.
+
 ## 🔄 Integration
 
 ### Package.json Scripts
@@ -380,6 +426,7 @@ Total number of modules with unused imports: 2
 - **Import Analysis**: Detect unused module imports in `@Module()` decorators
 - **Inheritance-Aware Analysis**: Automatically detects dependencies through class inheritance chains
 - **Auto-Fix Capability**: Automatically remove unused imports with `--fix` flag
+- **Ignore Comments**: File-level and line-level ignore functionality
 - **Multiple Output Formats**: Text and JSON output support
 - **CI/CD Integration**: Standardized exit codes and check modes
 - **Cross-Platform**: Works on macOS, Linux, Windows
@@ -398,26 +445,6 @@ Total number of modules with unused imports: 2
   nestjs-module-lint lint src/
   ```
 
-#### Ignore Comments
-- **File-level Ignores**: Skip analysis for specific files
-  ```typescript
-  // nestjs-module-lint-disable-file
-  @Module({
-    imports: [SomeModuleWeWantToKeep], // This won't be flagged
-  })
-  export class LegacyModule {}
-  ```
-  
-- **Line-level Ignores**: Skip specific imports
-  ```typescript
-  @Module({
-    imports: [
-      RequiredModule,
-      OptionalModule, // nestjs-module-lint-disable-line
-    ],
-  })
-  export class MyModule {}
-  ```
 
 #### Project-Level Configuration
 - **Configuration File**: `.nestjs-module-lint.json` or `nestjs-module-lint.config.js` for project-wide settings
