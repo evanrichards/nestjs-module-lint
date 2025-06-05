@@ -170,7 +170,7 @@ func getFileImports(
 	var fileImportNodes []FileImportNode
 	fileDir := filepath.Dir(filePath)
 	for importName, importPath := range fileImports {
-    // Skip @nestjs/ imports
+		// Skip @nestjs/ imports
 		if strings.HasPrefix(importPath, "@nestjs/") {
 			continue
 		}

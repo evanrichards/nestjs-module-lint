@@ -1,6 +1,7 @@
 # NestJS Module Lint
 
 [![npm version](https://badge.fury.io/js/nestjs-module-lint.svg)](https://badge.fury.io/js/nestjs-module-lint)
+[![CI](https://github.com/evanrichards/nestjs-module-lint/actions/workflows/ci.yml/badge.svg)](https://github.com/evanrichards/nestjs-module-lint/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A powerful command-line tool for analyzing NestJS modules to identify unused module imports in `@Module()` decorators. Detects when modules are imported but their exports are never used by the module's providers or controllers. Built with Go and tree-sitter for fast and accurate TypeScript parsing.
@@ -190,30 +191,66 @@ jobs:
 
 ## 🛠️ Development
 
-### Building from Source
+This project includes a comprehensive Makefile for easy development and CI/CD integration.
+
+### Quick Start
 
 ```bash
 git clone https://github.com/evanrichards/nestjs-module-lint.git
 cd nestjs-module-lint
-go mod download
-go build -o nestjs-module-lint .
+make help    # See all available commands
+make build   # Build the binary
+make test    # Run tests
 ```
 
-### Running Tests
+### Available Make Targets
+
+| Target | Description |
+|--------|-------------|
+| `make build` | Build the binary to `bin/nestjs-module-lint` |
+| `make test` | Run all tests with verbose output |
+| `make bench` | Run benchmarks on core packages |
+| `make lint` | Run golangci-lint for code quality |
+| `make fmt` | Format all Go code |
+| `make clean` | Remove build artifacts and clear cache |
+| `make install` | Install binary to `$GOPATH/bin` |
+| `make run` | Build and run with `test.ts` |
+| `make run-json` | Build and run with JSON output |
+| `make help` | Show all available targets |
+
+### Manual Build
 
 ```bash
-go test ./...
+go mod download
+go build -o bin/nestjs-module-lint .
 ```
+
+### Quality Assurance
+
+The project uses automated CI/CD with comprehensive testing:
+
+- **Multi-OS Testing**: Ubuntu, Windows, macOS
+- **Multi-Go Version**: Go 1.20, 1.21, 1.22
+- **Automated Linting**: golangci-lint with latest rules
+- **Benchmark Testing**: Performance regression detection
 
 ### Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-feature`
 3. Make your changes and add tests
-4. Run tests: `go test ./...`
+4. Run the development workflow:
+   ```bash
+   make fmt      # Format code
+   make lint     # Check code quality
+   make test     # Run tests
+   make bench    # Run benchmarks
+   ```
 5. Commit your changes: `git commit -am 'Add my feature'`
 6. Push to the branch: `git push origin feature/my-feature`
 7. Submit a pull request
+
+The CI pipeline will automatically run tests across multiple platforms and Go versions.
 
 ## 📊 Output Examples
 

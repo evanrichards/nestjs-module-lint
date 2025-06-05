@@ -35,9 +35,9 @@ export class AppModule {}
 
 	// Verify expected output
 	expectedImports := map[string]string{
-		"Module":     "@nestjs/common",
-		"SomeImport": "./some-import",
-    "DefaultName": "src/last-dir",
+		"Module":      "@nestjs/common",
+		"SomeImport":  "./some-import",
+		"DefaultName": "src/last-dir",
 	}
 	for moduleName, imports := range expectedImports {
 		if gotImports, ok := importsByModule[moduleName]; !ok || len(gotImports) != len(imports) {

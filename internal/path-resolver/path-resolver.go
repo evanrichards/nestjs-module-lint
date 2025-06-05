@@ -80,13 +80,29 @@ func (t *TsPathResolver) ResolveImportPath(importingFileDir, importPath string) 
 		regexpAlias := regexp.MustCompile(aliasPattern)
 		if regexpAlias.MatchString(importPath) {
 			submatches := regexpAlias.FindStringSubmatch(importPath)
-			for _, path := range paths {
+			var fallbackPath string
+			for i, path := range paths {
 				resolvedPath := path
 				if strings.Contains(path, "*") && len(submatches) > 1 {
 					resolvedPath = strings.Replace(path, "*", submatches[1], 1)
 				}
 				absolutePath := filepath.Join(t.projectRoot, resolvedPath)
-				return filepath.Clean(absolutePath)
+				cleanPath := filepath.Clean(absolutePath)
+
+				// Store first path as fallback
+				if i == 0 {
+					fallbackPath = cleanPath
+				}
+
+				// Check if file exists, if so return it
+				if _, err := os.Stat(cleanPath); err == nil {
+					return cleanPath
+				}
+			}
+
+			// If no files exist, return the first path as fallback
+			if fallbackPath != "" {
+				return fallbackPath
 			}
 		}
 	}
