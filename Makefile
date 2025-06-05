@@ -13,7 +13,7 @@ test:
 
 # Run benchmarks
 bench:
-	go test -bench=. -benchmem ./internal/parser ./internal/path-resolver
+	go test -bench=. -benchmem ./internal/parser ./internal/resolver
 
 # Install the binary to GOPATH/bin
 install:

@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestGetImportPathsByImportNames(t *testing.T) {
+func TestParseImportPaths(t *testing.T) {
 	// Example TypeScript source to parse
 	sourceCode := `
 import { Module } from "@nestjs/common";
@@ -28,7 +28,7 @@ export class AppModule {}
 	}
 
 	// Call the function under test
-	importsByModule, err := parser.GetImportPathsByImportNames(node, []byte(sourceCode))
+	importsByModule, err := parser.ParseImportPaths(node, []byte(sourceCode))
 	if err != nil {
 		t.Fatalf("Failed to get imports by module: %v", err)
 	}

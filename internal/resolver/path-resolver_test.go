@@ -1,9 +1,9 @@
-package pathresolver_test
+package resolver_test
 
 import (
 	"testing"
 
-	pathresolver "github.com/evanrichards/nestjs-module-lint/internal/path-resolver"
+	"github.com/evanrichards/nestjs-module-lint/internal/resolver"
 )
 
 func TestResolveImportPath(t *testing.T) {
@@ -26,7 +26,7 @@ func TestResolveImportPath(t *testing.T) {
 		{"resolve package local paths", "src/my-new-test", "/path/to/project/src/my-new-test.ts"},
 	}
 
-	tsPathResolver, err := pathresolver.NewTsPathResolver([]byte(tsConfig), "/path/to/project")
+	tsPathResolver, err := resolver.NewTsPathResolver([]byte(tsConfig), "/path/to/project")
 	if err != nil {
 		t.Fatalf("Failed to create ts path resolver: %v", err)
 	}

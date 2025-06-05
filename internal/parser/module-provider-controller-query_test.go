@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestGetProviderControllerByModuleFromFile(t *testing.T) {
+func TestParseModuleProviders(t *testing.T) {
 	// Example TypeScript source to parse
 	sourceCode := `
 import { Module } from "@nestjs/common";
@@ -28,7 +28,7 @@ export class AppModule {}
 	}
 
 	// Call the function under test
-	providersControllerByModule, err := parser.GetProviderControllersByModuleFromFile(node, []byte(sourceCode))
+	providersControllerByModule, err := parser.ParseModuleProviders(node, []byte(sourceCode))
 	if err != nil {
 		t.Fatalf("Failed to get provider controllers by module: %v", err)
 	}

@@ -4,10 +4,12 @@ import sitter "github.com/smacker/go-tree-sitter"
 
 // These are defined by the order of the captures in the query, if the query is
 // changed this will need to be updated.
-var _PROVIDER_CONTROLLER_QUERY_PROVIDER_CONTROLLER_LIST_IDX = uint32(2)
-var _PROVIDER_CONTROLLER_QUERY_MODULE_NAME_IDX = uint32(3)
+const (
+	providersListIndex      = uint32(2)
+	providerModuleNameIndex = uint32(3)
+)
 
-func GetProviderControllersByModuleFromFile(
+func ParseModuleProviders(
 	node *sitter.Node,
 	sourceCode []byte,
 ) (map[string][]string, error) {
@@ -31,9 +33,9 @@ func GetProviderControllersByModuleFromFile(
 			providerControllerName string
 		}{}
 		for _, c := range m.Captures {
-			if c.Index == _PROVIDER_CONTROLLER_QUERY_MODULE_NAME_IDX {
+			if c.Index == providerModuleNameIndex {
 				currPair.moduleName = c.Node.Content(sourceCode)
-			} else if c.Index == _PROVIDER_CONTROLLER_QUERY_PROVIDER_CONTROLLER_LIST_IDX {
+			} else if c.Index == providersListIndex {
 				currPair.providerControllerName = c.Node.Content(sourceCode)
 			}
 		}

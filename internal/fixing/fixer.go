@@ -40,6 +40,9 @@ func (f *Fixer) FixUnusedImports(sourceCode []byte, unusedModules []string) ([]b
 
 	source := string(sourceCode)
 
+	// Check if there's a blank line after imports before we start modifying
+	hasBlankLineAfterImports := f.hasBlankLineAfterImports(source)
+
 	// Remove unused import statements
 	for _, moduleName := range unusedModules {
 		source = f.removeImportStatement(source, moduleName)
@@ -48,7 +51,12 @@ func (f *Fixer) FixUnusedImports(sourceCode []byte, unusedModules []string) ([]b
 	// Remove unused modules from @Module imports arrays
 	source = f.removeFromModuleImports(source, unusedModules)
 
-	// Clean up excessive blank lines
+	// If there was a blank line after imports originally, ensure it's preserved
+	if hasBlankLineAfterImports {
+		source = f.ensureBlankLineAfterImports(source)
+	}
+
+	// Clean up excessive blank lines (but preserve intended single blank lines)
 	source = f.cleanupBlankLines(source)
 
 	return []byte(source), nil
@@ -61,12 +69,12 @@ func (f *Fixer) removeImportStatement(source, moduleName string) string {
 	//         import ModuleName from '...';
 	//         import { ModuleName as Alias } from '...';
 	patterns := []string{
-		// Named import: import { ModuleName } from '...';
-		fmt.Sprintf(`import\s*{\s*%s\s*}\s*from\s*['"][^'"]*['"];\s*\n?`, regexp.QuoteMeta(moduleName)),
-		// Default import: import ModuleName from '...';
-		fmt.Sprintf(`import\s+%s\s+from\s*['"][^'"]*['"];\s*\n?`, regexp.QuoteMeta(moduleName)),
-		// Named import with alias: import { ModuleName as Alias } from '...';
-		fmt.Sprintf(`import\s*{\s*[^}]*%s[^}]*}\s*from\s*['"][^'"]*['"];\s*\n?`, regexp.QuoteMeta(moduleName)),
+		// Named import: import { ModuleName } from '...'; [optional comment]
+		fmt.Sprintf(`import\s*{\s*%s\s*}\s*from\s*['"][^'"]*['"];[^\n]*\n?`, regexp.QuoteMeta(moduleName)),
+		// Default import: import ModuleName from '...'; [optional comment]
+		fmt.Sprintf(`import\s+%s\s+from\s*['"][^'"]*['"];[^\n]*\n?`, regexp.QuoteMeta(moduleName)),
+		// Named import with alias: import { ModuleName as Alias } from '...'; [optional comment]
+		fmt.Sprintf(`import\s*{\s*[^}]*%s[^}]*}\s*from\s*['"][^'"]*['"];[^\n]*\n?`, regexp.QuoteMeta(moduleName)),
 	}
 
 	for _, pattern := range patterns {
@@ -131,7 +139,7 @@ func (f *Fixer) removeFromInlineArray(arrayContent string, removeSet map[string]
 		}
 
 		if !removeSet[trimmed] {
-			kept = append(kept, part) // Keep original spacing
+			kept = append(kept, trimmed) // Use trimmed to normalize spacing
 		}
 	}
 
@@ -139,7 +147,8 @@ func (f *Fixer) removeFromInlineArray(arrayContent string, removeSet map[string]
 		return "" // Empty array
 	}
 
-	return strings.Join(kept, ",")
+	// Join with proper spacing: comma followed by space
+	return strings.Join(kept, ", ")
 }
 
 // removeFromMultilineArray handles multi-line arrays with proper formatting
@@ -164,17 +173,62 @@ func (f *Fixer) extractModuleName(line string) string {
 	trimmed = strings.TrimSuffix(trimmed, ",")
 	trimmed = strings.TrimSpace(trimmed)
 
-	// Skip empty lines or comments
+	// Skip empty lines or comment-only lines
 	if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "/*") {
 		return ""
 	}
 
+	// Remove inline comments (e.g., "ModuleName // comment" -> "ModuleName")
+	if commentIndex := strings.Index(trimmed, "//"); commentIndex != -1 {
+		trimmed = strings.TrimSpace(trimmed[:commentIndex])
+	}
+	if commentIndex := strings.Index(trimmed, "/*"); commentIndex != -1 {
+		trimmed = strings.TrimSpace(trimmed[:commentIndex])
+	}
+
+	// Remove trailing comma again (in case it was after the module name but before the comment)
+	trimmed = strings.TrimSuffix(trimmed, ",")
+	trimmed = strings.TrimSpace(trimmed)
+
 	return trimmed
 }
 
-// cleanupBlankLines removes excessive blank lines from the source
+// hasBlankLineAfterImports checks if there's a blank line between imports and @Module
+func (f *Fixer) hasBlankLineAfterImports(source string) bool {
+	// Look for the pattern: import statements followed by blank line(s) followed by @Module
+	pattern := regexp.MustCompile(`import\s+[^;]+;.*?\n\s*\n\s*@Module`)
+	return pattern.MatchString(source)
+}
+
+// ensureBlankLineAfterImports ensures there's a blank line between imports and @Module
+func (f *Fixer) ensureBlankLineAfterImports(source string) string {
+	// Pattern to match: (last import)(possible whitespace/newlines)(@Module)
+	pattern := regexp.MustCompile(`(import\s+[^;]+;\s*\n)(\s*)(@Module)`)
+
+	return pattern.ReplaceAllStringFunc(source, func(match string) string {
+		// Extract the components
+		submatches := pattern.FindStringSubmatch(match)
+		if len(submatches) != 4 {
+			return match
+		}
+
+		lastImport := submatches[1]
+		whitespace := submatches[2]
+		moduleDecorator := submatches[3]
+
+		// If there's no blank line (just whitespace, no empty lines), add one
+		if !strings.Contains(whitespace, "\n\n") && !strings.Contains(whitespace, "\n\r\n") && !strings.Contains(whitespace, "\r\n\r\n") {
+			return lastImport + "\n" + moduleDecorator
+		}
+
+		return match
+	})
+}
+
+// cleanupBlankLines removes excessive blank lines from the source while preserving single blank lines
 func (f *Fixer) cleanupBlankLines(source string) string {
-	// Replace multiple consecutive blank lines with at most 2 blank lines
-	multipleBlankLines := regexp.MustCompile(`\n\s*\n\s*\n+`)
-	return multipleBlankLines.ReplaceAllString(source, "\n\n")
+	// Replace 3 or more consecutive blank lines with exactly 2 blank lines
+	// This preserves single blank lines (which are often intentional formatting)
+	excessiveBlankLines := regexp.MustCompile(`(\n\s*){3,}`)
+	return excessiveBlankLines.ReplaceAllString(source, "\n\n")
 }

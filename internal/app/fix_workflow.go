@@ -8,7 +8,7 @@ import (
 // FixWorkflow handles the complete fix process for a directory or file
 func FixWorkflow(path string) error {
 	// First, analyze to find unused imports
-	reports, err := RunForDirRecursively(path)
+	reports, err := AnalyzePath(path)
 	if err != nil {
 		return fmt.Errorf("analysis failed: %w", err)
 	}

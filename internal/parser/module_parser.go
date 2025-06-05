@@ -33,19 +33,19 @@ func (p *ModuleParser) ParseModuleInfo(filePath string) (*analysis.ModuleInfo, e
 	}
 
 	// Get imports by module
-	importsByModule, err := GetImportsByModuleFromFile(n, sourceCode)
+	importsByModule, err := ParseModuleImports(n, sourceCode)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get exports by module
-	exportsByModule, err := GetExportsByModuleFromFile(n, sourceCode)
+	exportsByModule, err := ParseModuleExports(n, sourceCode)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get providers by module
-	providersByModule, err := GetProviderControllersByModuleFromFile(n, sourceCode)
+	providersByModule, err := ParseModuleProviders(n, sourceCode)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (p *ModuleParser) GetImportsByModule(filePath string) (map[string][]string,
 		return nil, err
 	}
 
-	return GetImportsByModuleFromFile(n, sourceCode)
+	return ParseModuleImports(n, sourceCode)
 }
 
 // GetExportsByModule returns exports grouped by module name
@@ -99,7 +99,7 @@ func (p *ModuleParser) GetExportsByModule(filePath string) (map[string][]string,
 		return nil, err
 	}
 
-	return GetExportsByModuleFromFile(n, sourceCode)
+	return ParseModuleExports(n, sourceCode)
 }
 
 // GetProvidersByModule returns providers grouped by module name
@@ -114,5 +114,5 @@ func (p *ModuleParser) GetProvidersByModule(filePath string) (map[string][]strin
 		return nil, err
 	}
 
-	return GetProviderControllersByModuleFromFile(n, sourceCode)
+	return ParseModuleProviders(n, sourceCode)
 }

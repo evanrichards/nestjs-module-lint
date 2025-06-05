@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/evanrichards/nestjs-module-lint/internal/parser"
-	pathresolver "github.com/evanrichards/nestjs-module-lint/internal/path-resolver"
+	resolver "github.com/evanrichards/nestjs-module-lint/internal/resolver"
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
@@ -83,7 +83,7 @@ func (a *InheritanceAnalyzer) AnalyzeClassInheritance(sourceCode []byte) ([]Clas
 func (a *InheritanceAnalyzer) GetInheritedDependencies(
 	className string,
 	filePath string,
-	pathResolver *pathresolver.TsPathResolver,
+	pathResolver *resolver.TsPathResolver,
 	visited map[string]bool,
 ) ([]FileImportNode, error) {
 	// Prevent infinite recursion
@@ -162,10 +162,10 @@ type FileImportNode struct {
 func getFileImportsFromNode(
 	n *sitter.Node,
 	sourceCode []byte,
-	pathResolver *pathresolver.TsPathResolver,
+	pathResolver *resolver.TsPathResolver,
 	filePath string,
 ) ([]FileImportNode, error) {
-	fileImports, err := parser.GetImportPathsByImportNames(n, sourceCode)
+	fileImports, err := parser.ParseImportPaths(n, sourceCode)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +190,7 @@ func getFileImportsFromNode(
 }
 
 // findBaseClassFile finds the file containing the base class
-func findBaseClassFile(baseClassName string, imports []FileImportNode, pathResolver *pathresolver.TsPathResolver) string {
+func findBaseClassFile(baseClassName string, imports []FileImportNode, pathResolver *resolver.TsPathResolver) string {
 	for _, imp := range imports {
 		if imp.Name == baseClassName {
 			return imp.FullPath

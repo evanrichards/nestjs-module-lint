@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestGetExportsByModuleFromFile(t *testing.T) {
+func TestParseModuleExports(t *testing.T) {
 	// Example TypeScript source to parse
 	sourceCode := `
 import { Module } from "@nestjs/common";
@@ -27,7 +27,7 @@ export class AppModule {}
 	}
 
 	// Call the function under test
-	exportsByModule, err := parser.GetExportsByModuleFromFile(node, []byte(sourceCode))
+	exportsByModule, err := parser.ParseModuleExports(node, []byte(sourceCode))
 	if err != nil {
 		t.Fatalf("Failed to get exports by module: %v", err)
 	}

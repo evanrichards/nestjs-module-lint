@@ -4,10 +4,12 @@ import sitter "github.com/smacker/go-tree-sitter"
 
 // These are defined by the order of the captures in the query, if the query is
 // changed this will need to be updated.
-var _IMPORT_QUERY_IMPORTS_LIST_IDX = uint32(2)
-var _IMPORT_QUERY_MODULE_NAME_IDX = uint32(3)
+const (
+	importsListIndex      = uint32(2)
+	importModuleNameIndex = uint32(3)
+)
 
-func GetImportsByModuleFromFile(
+func ParseModuleImports(
 	node *sitter.Node,
 	sourceCode []byte,
 ) (map[string][]string, error) {
@@ -31,9 +33,9 @@ func GetImportsByModuleFromFile(
 			importName string
 		}{}
 		for _, c := range m.Captures {
-			if c.Index == _IMPORT_QUERY_MODULE_NAME_IDX {
+			if c.Index == importModuleNameIndex {
 				currPair.moduleName = c.Node.Content(sourceCode)
-			} else if c.Index == _IMPORT_QUERY_IMPORTS_LIST_IDX {
+			} else if c.Index == importsListIndex {
 				currPair.importName = c.Node.Content(sourceCode)
 			}
 		}

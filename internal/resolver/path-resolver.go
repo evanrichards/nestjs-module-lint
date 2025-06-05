@@ -1,4 +1,4 @@
-package pathresolver
+package resolver
 
 import (
 	"encoding/json"
@@ -78,10 +78,20 @@ func NewTsPathResolver(tsConfigFileContents []byte, projectRoot string) (*TsPath
 	if err != nil {
 		return nil, err
 	}
+
+	// Pre-compile all regex patterns to avoid runtime compilation
+	regexCache := make(map[string]*regexp.Regexp)
+	for alias := range tsConfig.CompilerOptions.Paths {
+		aliasPattern := "^" + strings.ReplaceAll(alias, "*", "(.*)") + "$"
+		if compiledRegex, err := regexp.Compile(aliasPattern); err == nil {
+			regexCache[aliasPattern] = compiledRegex
+		}
+	}
+
 	return &TsPathResolver{
 		paths:       tsConfig.CompilerOptions.Paths,
 		projectRoot: projectRoot,
-		regexCache:  make(map[string]*regexp.Regexp),
+		regexCache:  regexCache,
 	}, nil
 }
 

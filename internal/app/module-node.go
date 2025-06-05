@@ -3,12 +3,11 @@ package app
 import (
 	"context"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 
 	"github.com/evanrichards/nestjs-module-lint/internal/parser"
-	pathresolver "github.com/evanrichards/nestjs-module-lint/internal/path-resolver"
+	resolver "github.com/evanrichards/nestjs-module-lint/internal/resolver"
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
@@ -36,7 +35,7 @@ type ModuleNode struct {
 	name                string
 	imports             []ModuleImportNode
 	providerControllers []ProviderControllerNode
-	pathResolver        *pathresolver.TsPathResolver
+	pathResolver        *resolver.TsPathResolver
 }
 
 func findFileImportNodeByName(fileImportNodes []FileImportNode, name string) (*FileImportNode, bool) {
@@ -48,7 +47,7 @@ func findFileImportNodeByName(fileImportNodes []FileImportNode, name string) (*F
 	return nil, false
 }
 
-func NewModuleNode(name string, importNames, providerControllerNames []string, fileImportNodes []FileImportNode, pathResolver *pathresolver.TsPathResolver) *ModuleNode {
+func NewModuleNode(name string, importNames, providerControllerNames []string, fileImportNodes []FileImportNode, pathResolver *resolver.TsPathResolver) *ModuleNode {
 	var filteredImports []ModuleImportNode
 	for _, importName := range importNames {
 		if fileImportNode, ok := findFileImportNodeByName(fileImportNodes, importName); ok {
@@ -125,17 +124,21 @@ func (m *ModuleNode) Check() ([]string, error) {
 		return nil, err
 	}
 
+	// Create hash maps for faster lookups
+	allProviderImports := make(map[string]bool)
+	for _, providerController := range m.providerControllers {
+		for _, fileImport := range providerController.fileImports {
+			allProviderImports[fileImport.name] = true
+		}
+	}
+
+	// Check each import for usage
 	for _, importNode := range m.imports {
 		found := false
 		for _, export := range importNode.exports {
-			if found {
+			if allProviderImports[export] {
+				found = true
 				break
-			}
-			for _, providerController := range m.providerControllers {
-				if _, ok := findFileImportNodeByName(providerController.fileImports, export); ok {
-					found = true
-					break
-				}
 			}
 		}
 		if !found {
@@ -145,12 +148,12 @@ func (m *ModuleNode) Check() ([]string, error) {
 	return unnecessaryImports, nil
 }
 
-func getFileImportsForFile(filePath string, pathResolver *pathresolver.TsPathResolver) ([]FileImportNode, error) {
+func getFileImportsForFile(filePath string, pathResolver *resolver.TsPathResolver) ([]FileImportNode, error) {
 	sourceCode, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
-	n, err := sitter.ParseCtx(context.Background(), sourceCode, lang)
+	n, err := sitter.ParseCtx(context.Background(), sourceCode, getTypescriptLanguage())
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +167,7 @@ func getFileImportsForFile(filePath string, pathResolver *pathresolver.TsPathRes
 	}
 
 	// Fall back to normal import analysis
-	return getFileImportsFromNode(n, sourceCode, pathResolver, filePath)
+	return getFileImportsFromAST(n, sourceCode, pathResolver, filePath)
 }
 
 // extractClassNameFromFile finds the first exported class name in a file
@@ -208,39 +211,16 @@ func extractClassNameFromFile(sourceCode []byte) string {
 	return ""
 }
 
-func getFileImportsFromAST(
-	n *sitter.Node,
-	sourceCode []byte,
-	pathResolver *pathresolver.TsPathResolver,
-	filePath string,
-) ([]FileImportNode, error) {
-	fileImports, err := parser.GetImportPathsByImportNames(n, sourceCode)
-	if err != nil {
-		return nil, err
-	}
-	var fileImportNodes []FileImportNode
-	fileDir := filepath.Dir(filePath)
-	for importName, importPath := range fileImports {
-		// Skip @nestjs/ imports
-		if strings.HasPrefix(importPath, "@nestjs/") {
-			continue
-		}
-		fullpath := pathResolver.ResolveImportPath(fileDir, importPath)
-		fileImportNodes = append(fileImportNodes, FileImportNode{importPath, importName, fullpath})
-	}
-	return fileImportNodes, nil
-}
-
 func getExportsForModule(moduleName, filePath string) ([]string, error) {
 	sourceCode, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
-	n, err := sitter.ParseCtx(context.Background(), sourceCode, lang)
+	n, err := sitter.ParseCtx(context.Background(), sourceCode, getTypescriptLanguage())
 	if err != nil {
 		return nil, err
 	}
-	exportsByModule, err := parser.GetExportsByModuleFromFile(n, sourceCode)
+	exportsByModule, err := parser.ParseModuleExports(n, sourceCode)
 	if err != nil {
 		return nil, err
 	}

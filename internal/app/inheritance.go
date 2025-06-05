@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/evanrichards/nestjs-module-lint/internal/parser"
-	pathresolver "github.com/evanrichards/nestjs-module-lint/internal/path-resolver"
+	resolver "github.com/evanrichards/nestjs-module-lint/internal/resolver"
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
@@ -69,7 +69,7 @@ func AnalyzeClassInheritance(sourceCode []byte) ([]ClassInheritanceInfo, error) 
 }
 
 // getInheritedDependencies recursively finds dependencies from base classes
-func getInheritedDependencies(className string, filePath string, pathResolver *pathresolver.TsPathResolver, visited map[string]bool) ([]FileImportNode, error) {
+func getInheritedDependencies(className string, filePath string, pathResolver *resolver.TsPathResolver, visited map[string]bool) ([]FileImportNode, error) {
 	// Prevent infinite recursion
 	if visited[filePath] {
 		return nil, nil
@@ -146,7 +146,7 @@ func getInheritedDependencies(className string, filePath string, pathResolver *p
 }
 
 // findBaseClassFile finds the file containing the base class
-func findBaseClassFile(baseClassName string, currentFile string, pathResolver *pathresolver.TsPathResolver) string {
+func findBaseClassFile(baseClassName string, currentFile string, pathResolver *resolver.TsPathResolver) string {
 	// Read the current file to find the import statement for the base class
 	sourceCode, err := os.ReadFile(currentFile)
 	if err != nil {
@@ -154,13 +154,13 @@ func findBaseClassFile(baseClassName string, currentFile string, pathResolver *p
 	}
 
 	// Parse to find imports
-	tree, err := sitter.ParseCtx(context.Background(), sourceCode, lang)
+	tree, err := sitter.ParseCtx(context.Background(), sourceCode, getTypescriptLanguage())
 	if err != nil {
 		return ""
 	}
 
 	// Get import paths
-	importPaths, err := parser.GetImportPathsByImportNames(tree, sourceCode)
+	importPaths, err := parser.ParseImportPaths(tree, sourceCode)
 	if err != nil {
 		return ""
 	}
@@ -177,36 +177,16 @@ func findBaseClassFile(baseClassName string, currentFile string, pathResolver *p
 }
 
 // getFileImports is a helper to get file imports without inheritance analysis
-func getFileImports(filePath string, pathResolver *pathresolver.TsPathResolver) ([]FileImportNode, error) {
+func getFileImports(filePath string, pathResolver *resolver.TsPathResolver) ([]FileImportNode, error) {
 	sourceCode, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	tree, err := sitter.ParseCtx(context.Background(), sourceCode, lang)
+	tree, err := sitter.ParseCtx(context.Background(), sourceCode, getTypescriptLanguage())
 	if err != nil {
 		return nil, err
 	}
 
-	return getFileImportsFromNode(tree, sourceCode, pathResolver, filePath)
-}
-
-// getFileImportsFromNode extracts imports from a parsed node (helper function)
-func getFileImportsFromNode(n *sitter.Node, sourceCode []byte, pathResolver *pathresolver.TsPathResolver, filePath string) ([]FileImportNode, error) {
-	fileImports, err := parser.GetImportPathsByImportNames(n, sourceCode)
-	if err != nil {
-		return nil, err
-	}
-
-	var fileImportNodes []FileImportNode
-	fileDir := filepath.Dir(filePath)
-	for importName, importPath := range fileImports {
-		// Skip @nestjs/ imports
-		if strings.HasPrefix(importPath, "@nestjs/") {
-			continue
-		}
-		fullpath := pathResolver.ResolveImportPath(fileDir, importPath)
-		fileImportNodes = append(fileImportNodes, FileImportNode{importPath, importName, fullpath})
-	}
-	return fileImportNodes, nil
+	return getFileImportsFromAST(tree, sourceCode, pathResolver, filePath)
 }

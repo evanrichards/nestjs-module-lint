@@ -10,32 +10,149 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/evanrichards/nestjs-module-lint/internal/analysis"
+	"github.com/evanrichards/nestjs-module-lint/internal/detection"
+	"github.com/evanrichards/nestjs-module-lint/internal/filesystem"
 	"github.com/evanrichards/nestjs-module-lint/internal/parser"
-	pathresolver "github.com/evanrichards/nestjs-module-lint/internal/path-resolver"
+	"github.com/evanrichards/nestjs-module-lint/internal/resolver"
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/typescript/typescript"
 	mpb "github.com/vbauerster/mpb/v8"
 	"github.com/vbauerster/mpb/v8/decor"
 )
 
-var (
-	cwd  string
-	lang *sitter.Language
-)
-
-func init() {
-	_cwd, err := os.Getwd()
-	if err != nil {
-		panic("Could not get current file path")
-	}
-	cwd = _cwd
-	lang = typescript.GetLanguage()
+// getTypescriptLanguage returns the TypeScript language instance
+func getTypescriptLanguage() *sitter.Language {
+	return typescript.GetLanguage()
 }
 
-func RunForDirRecursively(
-	root string,
-) ([]*ModuleReport, error) {
-	info, err := os.Stat(root)
+// getWorkingDirectory returns the current working directory
+func getWorkingDirectory() (string, error) {
+	return os.Getwd()
+}
+
+// resolveFilePath converts relative paths to absolute paths based on working directory
+func resolveFilePath(filePath string) (string, string, error) {
+	cwd, err := getWorkingDirectory()
+	if err != nil {
+		return "", "", err
+	}
+
+	var qualifiedPath string
+	if filepath.IsAbs(filePath) {
+		qualifiedPath = filePath
+	} else {
+		qualifiedPath = filepath.Join(cwd, filePath)
+	}
+
+	return qualifiedPath, cwd, nil
+}
+
+// getRelativePath returns a relative path from the working directory, falling back to absolute path if conversion fails
+func getRelativePath(absolutePath, workingDir string) string {
+	relativePath, err := filepath.Rel(workingDir, absolutePath)
+	if err != nil {
+		// If we can't get relative path, fall back to the original path
+		return absolutePath
+	}
+	return relativePath
+}
+
+// AnalyzePath analyzes a file or directory for unused module imports
+// This is the main entry point that bridges old and new architectures
+func AnalyzePath(path string) ([]*ModuleReport, error) {
+	return analyzePathInternal(path, false)
+}
+
+// AnalyzePathWithNewArchitecture uses the new analysis architecture (when fully implemented)
+func AnalyzePathWithNewArchitecture(path string) ([]*ModuleReport, error) {
+	return analyzePathInternal(path, true)
+}
+
+// analyzePathInternal contains the actual implementation with architecture selection
+func analyzePathInternal(path string, useNewArchitecture bool) ([]*ModuleReport, error) {
+	if useNewArchitecture {
+		return analyzeWithNewArchitecture(path)
+	}
+	return analyzeWithLegacyArchitecture(path)
+}
+
+// analyzeWithNewArchitecture uses the new analysis package
+func analyzeWithNewArchitecture(path string) ([]*ModuleReport, error) {
+	// Get current working directory
+	cwd, err := getWorkingDirectory()
+	if err != nil {
+		return nil, err
+	}
+
+	// Create path resolver
+	tsPathResolver, err := resolver.NewTsPathResolverFromPath(cwd)
+	if err != nil {
+		return nil, err
+	}
+	pathResolverAdapter := resolver.NewPathResolverAdapter(tsPathResolver)
+
+	// Create parser adapter
+	parserAdapter := parser.NewParserAdapter(getTypescriptLanguage())
+
+	// Create detection adapters
+	ignoreDetector := detection.NewIgnoreDetector()
+	ignoreAdapter := detection.NewIgnoreDetectorAdapter(ignoreDetector)
+
+	reExportDetector := detection.NewReExportDetector()
+	reExportAdapter := detection.NewReExportDetectorAdapter(reExportDetector)
+
+	// Create analysis options
+	options := analysis.AnalysisOptions{
+		WorkingDirectory: cwd,
+		EnableIgnores:    true,
+		EnableReExports:  true,
+	}
+
+	// Create analyzer
+	analyzer := analysis.NewAnalyzer(
+		parserAdapter,
+		pathResolverAdapter,
+		ignoreAdapter,
+		reExportAdapter,
+		options,
+	)
+
+	// Determine if we're analyzing a file or directory
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []*analysis.ModuleAnalysisResult
+	if info.IsDir() {
+		results, err = analyzer.AnalyzeDirectory(path)
+	} else {
+		results, err = analyzer.AnalyzeFile(path)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert analysis results to ModuleReport for backward compatibility
+	var reports []*ModuleReport
+	for _, result := range results {
+		if len(result.UnusedImports) > 0 {
+			reports = append(reports, &ModuleReport{
+				ModuleName:         result.ModuleName,
+				Path:               result.FilePath,
+				UnnecessaryImports: result.UnusedImports,
+			})
+		}
+	}
+
+	return reports, nil
+}
+
+// analyzeWithLegacyArchitecture uses the existing implementation
+func analyzeWithLegacyArchitecture(path string) ([]*ModuleReport, error) {
+	info, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, fmt.Errorf("path does not exist")
@@ -45,20 +162,17 @@ func RunForDirRecursively(
 
 	var files []string
 	if info.IsDir() {
-		files, err = FindTSFiles(root)
+		files, err = filesystem.FindTypeScriptFiles(path)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find TypeScript files: %w", err)
 		}
-		if len(files) == 0 {
-			return nil, fmt.Errorf("no TypeScript files found in directory")
-		}
 	} else {
 		// Validate file extension for single files
-		lowerRoot := strings.ToLower(root)
-		if !strings.HasSuffix(lowerRoot, ".ts") && !strings.HasSuffix(lowerRoot, ".tsx") {
+		lowerPath := strings.ToLower(path)
+		if !strings.HasSuffix(lowerPath, ".ts") && !strings.HasSuffix(lowerPath, ".tsx") {
 			return nil, fmt.Errorf("file must have .ts or .tsx extension")
 		}
-		files = []string{root}
+		files = []string{path}
 	}
 	p := mpb.New(mpb.WithWidth(64))
 
@@ -84,7 +198,7 @@ func RunForDirRecursively(
 				bar.Increment()
 			}()
 
-			moduleReports, err := RunForModuleFile(file)
+			moduleReports, err := AnalyzeModuleFile(file)
 			if err != nil {
 				resultChan <- struct {
 					*ModuleReport
@@ -127,17 +241,14 @@ func RunForDirRecursively(
 	return results, nil
 }
 
-func RunForModuleFile(
-	pathToModule string,
-) ([]*ModuleReport, error) {
-	var qualifiedPathToModule string
-	if filepath.IsAbs(pathToModule) {
-		qualifiedPathToModule = pathToModule
-	} else {
-		qualifiedPathToModule = filepath.Join(cwd, pathToModule)
+// AnalyzeModuleFile analyzes a single TypeScript module file for unused imports
+func AnalyzeModuleFile(filePath string) ([]*ModuleReport, error) {
+	qualifiedPathToModule, cwd, err := resolveFilePath(filePath)
+	if err != nil {
+		return nil, err
 	}
 
-	pathResolver, err := pathresolver.NewTsPathResolverFromPath(cwd)
+	pathResolver, err := resolver.NewTsPathResolverFromPath(cwd)
 	if err != nil {
 		return nil, err
 	}
@@ -147,18 +258,22 @@ func RunForModuleFile(
 	}
 
 	// Parse ignore comments
-	ignoreInfo := ParseIgnoreComments(sourceCode)
+	ignoreDetector := detection.NewIgnoreDetector()
+	ignoreInfo := ignoreDetector.ParseIgnoreComments(sourceCode)
 
 	// If the entire file is ignored, return empty results
 	if ignoreInfo.FileIgnored {
 		return []*ModuleReport{}, nil
 	}
 
-	n, err := sitter.ParseCtx(context.Background(), sourceCode, lang)
+	// Initialize re-export detector
+	reExportDetector := detection.NewReExportDetector()
+
+	n, err := sitter.ParseCtx(context.Background(), sourceCode, getTypescriptLanguage())
 	if err != nil {
 		return nil, errors.Join(errors.New("could not parse the input file, is it valid typescript?"), err)
 	}
-	importsByModule, err := parser.GetImportsByModuleFromFile(n, sourceCode)
+	importsByModule, err := parser.ParseModuleImports(n, sourceCode)
 	if err != nil {
 		return nil, err
 	}
@@ -166,11 +281,11 @@ func RunForModuleFile(
 	if err != nil {
 		return nil, err
 	}
-	providerControllersByModule, err := parser.GetProviderControllersByModuleFromFile(n, sourceCode)
+	providerControllersByModule, err := parser.ParseModuleProviders(n, sourceCode)
 	if err != nil {
 		return nil, err
 	}
-	exportsByModule, err := parser.GetExportsByModuleFromFile(n, sourceCode)
+	exportsByModule, err := parser.ParseModuleExports(n, sourceCode)
 	if err != nil {
 		return nil, err
 	}
@@ -184,18 +299,14 @@ func RunForModuleFile(
 
 		if !ok {
 			// Convert absolute path to relative path from project root
-			relativePath, err := filepath.Rel(cwd, qualifiedPathToModule)
-			if err != nil {
-				// If we can't get relative path, fall back to the original path
-				relativePath = qualifiedPathToModule
-			}
+			relativePath := getRelativePath(qualifiedPathToModule, cwd)
 
 			// Filter out ignored imports
-			filteredImports := filterIgnoredImports(imports, ignoreInfo)
+			filteredImports := ignoreDetector.GetNonIgnoredImports(imports, sourceCode)
 
 			// Filter out re-exported imports
 			if hasExports {
-				filteredImports = filterReExportedImports(filteredImports, moduleExports)
+				filteredImports = reExportDetector.GetNonReExportedImports(filteredImports, moduleExports)
 			}
 
 			// Only create a report if there are still unused imports after filtering
@@ -214,7 +325,7 @@ func RunForModuleFile(
 			moduleExportsForModule = moduleExports
 		}
 
-		moduleReport, err := runForModule(module, imports, providerControllers, fileImports, pathResolver, qualifiedPathToModule, ignoreInfo, moduleExportsForModule)
+		moduleReport, err := analyzeModule(module, imports, providerControllers, fileImports, pathResolver, qualifiedPathToModule, ignoreInfo, moduleExportsForModule)
 		if err != nil {
 			return nil, err
 		}
@@ -231,36 +342,48 @@ type ModuleReport struct {
 	UnnecessaryImports []string `json:"unnecessary_imports"`
 }
 
-func runForModule(
+func analyzeModule(
 	moduleName string,
 	importNames []string,
 	providerControllers []string,
 	fileImports []FileImportNode,
-	pathResolver *pathresolver.TsPathResolver,
+	pathResolver *resolver.TsPathResolver,
 	qualifiedPathToModule string,
-	ignoreInfo *IgnoreInfo,
+	ignoreInfo *detection.IgnoreInfo,
 	moduleExports []string,
 ) (*ModuleReport, error) {
 	moduleNode := NewModuleNode(moduleName, importNames, providerControllers, fileImports, pathResolver)
-	unecessaryInputs, err := moduleNode.Check()
+	unnecessaryInputs, err := moduleNode.Check()
 	if err != nil {
 		return nil, err
 	}
 
-	// Filter out ignored imports
-	filteredImports := filterIgnoredImports(unecessaryInputs, ignoreInfo)
+	// Filter out ignored imports using the ignoreInfo that was passed in
+	// Note: We need the source code to properly filter, but for now we'll use the passed ignoreInfo
+	var filteredImports []string
+	for _, imp := range unnecessaryInputs {
+		if !ignoreInfo.ShouldIgnoreModule(imp) {
+			filteredImports = append(filteredImports, imp)
+		}
+	}
 
 	// Filter out re-exported imports
 	if len(moduleExports) > 0 {
-		filteredImports = filterReExportedImports(filteredImports, moduleExports)
+		reExportDetector := detection.NewReExportDetector()
+		filteredImports = reExportDetector.GetNonReExportedImports(filteredImports, moduleExports)
 	}
 
 	// Convert absolute path to relative path from project root
-	relativePath, err := filepath.Rel(cwd, qualifiedPathToModule)
+	cwd, err := getWorkingDirectory()
 	if err != nil {
-		// If we can't get relative path, fall back to the original path
-		relativePath = qualifiedPathToModule
+		// If we can't get working directory, just use the qualified path
+		return &ModuleReport{
+			ModuleName:         moduleName,
+			Path:               qualifiedPathToModule,
+			UnnecessaryImports: filteredImports,
+		}, nil
 	}
+	relativePath := getRelativePath(qualifiedPathToModule, cwd)
 
 	return &ModuleReport{
 		ModuleName:         moduleName,
