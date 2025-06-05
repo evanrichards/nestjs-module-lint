@@ -148,7 +148,7 @@ func RunForModuleFile(
 	if err != nil {
 		return nil, err
 	}
-	fileImports, err := getFileImports(n, sourceCode, pathResolver, qualifiedPathToModule)
+	fileImports, err := getFileImportsFromAST(n, sourceCode, pathResolver, qualifiedPathToModule)
 	if err != nil {
 		return nil, err
 	}

@@ -132,8 +132,9 @@ The tool analyzes your NestJS modules by:
 
 1. **Parsing TypeScript**: Uses tree-sitter to build an Abstract Syntax Tree (AST) of your TypeScript files
 2. **Module Analysis**: Identifies `@Module()` decorators and extracts their imports, providers, controllers, and exports arrays
-3. **Dependency Tracking**: For each module in the imports array, checks if any of its exports are used by the current module's providers or controllers
-4. **Unused Detection**: Reports modules in the imports array whose exports are never actually used
+3. **Inheritance Analysis**: Detects class inheritance patterns and traces dependencies through base classes
+4. **Dependency Tracking**: For each module in the imports array, checks if any of its exports are used by the current module's providers or controllers (including inherited dependencies)
+5. **Unused Detection**: Reports modules in the imports array whose exports are never actually used
 
 ### Example Analysis
 
@@ -169,6 +170,43 @@ Unnecessary Imports:
 
 Total number of modules with unused imports: 1
 ```
+
+### Inheritance-Aware Analysis
+
+The tool automatically detects dependencies through inheritance chains. For example:
+
+```typescript
+// base.service.ts
+import { Injectable } from '@nestjs/common';
+import { DatabaseService } from './database.service';
+
+@Injectable()
+export class BaseService {
+  constructor(private db: DatabaseService) {}
+}
+
+// user.service.ts
+import { Injectable } from '@nestjs/common';
+import { BaseService } from './base.service';
+
+@Injectable()
+export class UserService extends BaseService {
+  // No explicit constructor - inherits DatabaseService dependency
+}
+
+// user.module.ts
+import { Module } from '@nestjs/common';
+import { UserService } from './user.service';
+import { DatabaseModule } from './database.module';
+
+@Module({
+  imports: [DatabaseModule], // NOT flagged as unused due to inheritance
+  providers: [UserService],
+})
+export class UserModule {}
+```
+
+The tool recognizes that `UserService` inherits from `BaseService`, which requires `DatabaseService`, so `DatabaseModule` is correctly identified as needed.
 
 ## 🔄 Integration
 
@@ -340,6 +378,7 @@ Total number of modules with unused imports: 2
 
 ### ✅ Current Features
 - **Import Analysis**: Detect unused module imports in `@Module()` decorators
+- **Inheritance-Aware Analysis**: Automatically detects dependencies through class inheritance chains
 - **Auto-Fix Capability**: Automatically remove unused imports with `--fix` flag
 - **Multiple Output Formats**: Text and JSON output support
 - **CI/CD Integration**: Standardized exit codes and check modes

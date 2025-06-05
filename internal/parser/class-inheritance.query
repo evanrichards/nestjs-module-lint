@@ -1,0 +1,10 @@
+; Match class declarations with extends clause
+(class_declaration
+  name: (type_identifier) @class-name
+  body: (class_body) @class-body
+) @class-decl
+
+; Match extends clauses separately 
+(extends_clause
+  value: (identifier) @base-class
+) @extends-clause

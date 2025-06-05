@@ -12,16 +12,18 @@ var (
 	typescriptLang = typescript.GetLanguage()
 
 	// Cached compiled queries
-	moduleImportQueryCache   *sitter.Query
-	importPathQueryCache     *sitter.Query
-	moduleExportQueryCache   *sitter.Query
-	moduleProviderQueryCache *sitter.Query
+	moduleImportQueryCache     *sitter.Query
+	importPathQueryCache       *sitter.Query
+	moduleExportQueryCache     *sitter.Query
+	moduleProviderQueryCache   *sitter.Query
+	classInheritanceQueryCache *sitter.Query
 
 	// Sync guards for one-time initialization
-	moduleImportQueryOnce   sync.Once
-	importPathQueryOnce     sync.Once
-	moduleExportQueryOnce   sync.Once
-	moduleProviderQueryOnce sync.Once
+	moduleImportQueryOnce     sync.Once
+	importPathQueryOnce       sync.Once
+	moduleExportQueryOnce     sync.Once
+	moduleProviderQueryOnce   sync.Once
+	classInheritanceQueryOnce sync.Once
 )
 
 //go:embed module-imports.query
@@ -35,6 +37,9 @@ var moduleExportsQuery string
 
 //go:embed module-provider-controller.query
 var moduleProviderControllerQuery string
+
+//go:embed class-inheritance.query
+var classInheritanceQuery string
 
 func queryFromString(queryContent string) (*sitter.Query, error) {
 	return sitter.NewQuery([]byte(queryContent), typescriptLang)
@@ -70,4 +75,12 @@ func LoadModuleProviderControllerQuery() (*sitter.Query, error) {
 		moduleProviderQueryCache, err = queryFromString(moduleProviderControllerQuery)
 	})
 	return moduleProviderQueryCache, err
+}
+
+func LoadClassInheritanceQuery() (*sitter.Query, error) {
+	var err error
+	classInheritanceQueryOnce.Do(func() {
+		classInheritanceQueryCache, err = queryFromString(classInheritanceQuery)
+	})
+	return classInheritanceQueryCache, err
 }
