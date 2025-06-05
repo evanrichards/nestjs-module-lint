@@ -130,7 +130,12 @@ func RunForDirRecursively(
 func RunForModuleFile(
 	pathToModule string,
 ) ([]*ModuleReport, error) {
-	qualifiedPathToModule := filepath.Join(cwd, pathToModule)
+	var qualifiedPathToModule string
+	if filepath.IsAbs(pathToModule) {
+		qualifiedPathToModule = pathToModule
+	} else {
+		qualifiedPathToModule = filepath.Join(cwd, pathToModule)
+	}
 
 	pathResolver, err := pathresolver.NewTsPathResolverFromPath(cwd)
 	if err != nil {
@@ -161,9 +166,16 @@ func RunForModuleFile(
 	for module, imports := range importsByModule {
 		providerControllers, ok := providerControllersByModule[module]
 		if !ok {
+			// Convert absolute path to relative path from project root
+			relativePath, err := filepath.Rel(cwd, qualifiedPathToModule)
+			if err != nil {
+				// If we can't get relative path, fall back to the original path
+				relativePath = qualifiedPathToModule
+			}
+			
 			moduleReports = append(moduleReports, &ModuleReport{
 				ModuleName:         module,
-				Path:               qualifiedPathToModule,
+				Path:               relativePath,
 				UnnecessaryImports: imports,
 			})
 			continue
@@ -197,9 +209,16 @@ func runForModule(
 	if err != nil {
 		return nil, err
 	}
+	// Convert absolute path to relative path from project root
+	relativePath, err := filepath.Rel(cwd, qualifiedPathToModule)
+	if err != nil {
+		// If we can't get relative path, fall back to the original path
+		relativePath = qualifiedPathToModule
+	}
+	
 	return &ModuleReport{
 		ModuleName:         moduleName,
-		Path:               qualifiedPathToModule,
+		Path:               relativePath,
 		UnnecessaryImports: unecessaryInputs,
 	}, nil
 }
