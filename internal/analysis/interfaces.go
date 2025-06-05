@@ -31,4 +31,5 @@ type ModuleParser interface {
 	GetImportsByModule(filePath string) (map[string][]string, error)
 	GetExportsByModule(filePath string) (map[string][]string, error)
 	GetProvidersByModule(filePath string) (map[string][]string, error)
+	GetImportPaths(filePath string) (map[string]string, error)
 }

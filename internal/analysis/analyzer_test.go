@@ -45,6 +45,11 @@ func (m *mockModuleParser) GetProvidersByModule(filePath string) (map[string][]s
 	return map[string][]string{}, nil
 }
 
+func (m *mockModuleParser) GetImportPaths(filePath string) (map[string]string, error) {
+	// Simple mock implementation - return empty map
+	return map[string]string{}, nil
+}
+
 type mockPathResolver struct{}
 
 func (m *mockPathResolver) ResolveImportPath(baseDir, importPath string) string {
@@ -134,11 +139,19 @@ func TestAnalyzer_AnalyzeFile(t *testing.T) {
 		t.Fatalf("AnalyzeFile failed: %v", err)
 	}
 
-	// Note: The current implementation has a simplified findUnusedImports that returns empty
-	// array when there are providers. Since our test has providers, we expect no results.
-	// This test verifies the infrastructure works, not the actual dependency analysis.
-	if len(results) != 0 {
-		t.Fatalf("Expected 0 results (due to simplified implementation), got %d", len(results))
+	// With the full dependency analysis implementation, we expect to find unused imports
+	// The test setup has imports that are not used by the providers
+	if len(results) != 1 {
+		t.Fatalf("Expected 1 result, got %d", len(results))
+	}
+
+	result := results[0]
+	if result.ModuleName != "TestModule" {
+		t.Errorf("Expected module name 'TestModule', got '%s'", result.ModuleName)
+	}
+
+	if len(result.UnusedImports) == 0 {
+		t.Error("Expected to find unused imports")
 	}
 }
 

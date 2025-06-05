@@ -110,3 +110,18 @@ func (p *ParserAdapter) GetProvidersByModule(filePath string) (map[string][]stri
 
 	return ParseModuleProviders(tree, sourceCode)
 }
+
+// GetImportPaths implements the ModuleParser interface
+func (p *ParserAdapter) GetImportPaths(filePath string) (map[string]string, error) {
+	sourceCode, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	tree, err := sitter.ParseCtx(context.Background(), sourceCode, p.lang)
+	if err != nil {
+		return nil, err
+	}
+
+	return ParseImportPaths(tree, sourceCode)
+}
