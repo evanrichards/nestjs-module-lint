@@ -367,17 +367,25 @@ Total number of modules with unused imports: 2
   export class MyModule {}
   ```
 
-#### Performance & Benchmarking
-- **Benchmarking Suite**: Comprehensive performance testing framework
-  - Large codebase simulation (1000+ modules)
-  - Memory usage profiling
-  - Concurrent processing benchmarks
-  - Performance regression detection in CI
-  ```bash
-  make bench-all    # Run full benchmark suite
-  make bench-memory # Memory usage analysis
-  make bench-large  # Large codebase simulation
+#### Project-Level Configuration
+- **Configuration File**: `.nestjs-module-lint.json` or `nestjs-module-lint.config.js` for project-wide settings
+  ```json
+  {
+    "ignoreModules": ["LegacyModule", "ThirdPartyModule"],
+    "ignoreDirectories": ["src/legacy/**", "src/external/**"],
+    "ignoreSubdomains": ["@company/legacy", "@deprecated/*"],
+    "rules": {
+      "allowUnusedInTests": true,
+      "strictMode": false
+    },
+    "exclude": ["**/*.spec.ts", "**/*.test.ts"]
+  }
   ```
+  - **Module Allowlisting**: Never error on specific modules by name
+  - **Directory Exclusion**: Skip entire subdirectories from analysis
+  - **Subdomain Ignoring**: Ignore imports from specific npm scopes or patterns
+  - **Rule Customization**: Fine-tune linting behavior per project
+  - **Test File Handling**: Special rules for test files and mocks
 
 #### Advanced Analysis
 - **Dependency Graph**: Visualize module dependencies
