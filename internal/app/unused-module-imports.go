@@ -35,16 +35,26 @@ func RunForDirRecursively(
 ) ([]*ModuleReport, error) {
 	info, err := os.Stat(root)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to access path: %w", err)
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("path does not exist")
+		}
+		return nil, fmt.Errorf("cannot access path: %w", err)
 	}
 
 	var files []string
 	if info.IsDir() {
 		files, err = FindTSFiles(root)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to find TypeScript files: %w", err)
+			return nil, fmt.Errorf("failed to find TypeScript files: %w", err)
+		}
+		if len(files) == 0 {
+			return nil, fmt.Errorf("no TypeScript files found in directory")
 		}
 	} else {
+		// Validate file extension for single files
+		if !strings.HasSuffix(strings.ToLower(root), ".ts") && !strings.HasSuffix(strings.ToLower(root), ".tsx") {
+			return nil, fmt.Errorf("file must have .ts or .tsx extension")
+		}
 		files = []string{root}
 	}
 	p := mpb.New(mpb.WithWidth(64))

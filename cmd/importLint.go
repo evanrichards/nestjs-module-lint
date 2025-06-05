@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/evanrichards/nestjs-module-lint/internal/app"
 	"github.com/spf13/cobra"
@@ -32,19 +33,25 @@ Examples:
 
   # Report only mode (always exit 0)
   nestjs-module-lint import-lint --exit-zero --quiet src/`,
-	Args:  cobra.MinimumNArgs(1),
+	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var allReports []*app.ModuleReport
-		
+
 		for _, arg := range args {
+			// Validate argument
+			if strings.TrimSpace(arg) == "" {
+				fmt.Fprintf(os.Stderr, "Error: empty path provided\n")
+				os.Exit(2)
+			}
+
 			reports, err := app.RunForDirRecursively(arg)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error analyzing %s: %v\n", arg, err)
+				fmt.Fprintf(os.Stderr, "Error analyzing '%s': %v\n", arg, err)
 				os.Exit(2) // Exit code 2 for execution errors
 			}
 			allReports = append(allReports, reports...)
 		}
-		
+
 		// Output results based on format
 		if ofJson {
 			d, _ := json.Marshal(allReports)
@@ -54,7 +61,7 @@ Examples:
 			for _, report := range allReports {
 				fmt.Println(app.PrettyPrintModuleReport(report))
 			}
-			
+
 			if checkMode {
 				if len(allReports) > 0 {
 					fmt.Printf("✗ Found %d modules with unused imports\n", len(allReports))
@@ -65,7 +72,7 @@ Examples:
 				fmt.Printf("Total number of modules with unused imports: %d\n", len(allReports))
 			}
 		}
-		
+
 		// Determine exit code
 		if len(allReports) > 0 && !exitZero {
 			os.Exit(1) // Exit code 1 for linting failures
@@ -85,11 +92,11 @@ func init() {
 	// Output format flags
 	importLintCmd.Flags().BoolVar(&ofJson, "json", false, "Output in JSON format")
 	importLintCmd.Flags().BoolVar(&ofText, "text", false, "Output in text format")
-	
+
 	// CI/CD flags
 	importLintCmd.Flags().BoolVar(&checkMode, "check", false, "Check mode with pass/fail output (good for CI)")
 	importLintCmd.Flags().BoolVar(&exitZero, "exit-zero", false, "Exit with code 0 even when issues are found")
 	importLintCmd.Flags().BoolVar(&quiet, "quiet", false, "Suppress output (useful with --exit-zero)")
-	
+
 	importLintCmd.MarkFlagsMutuallyExclusive("json", "text")
 }

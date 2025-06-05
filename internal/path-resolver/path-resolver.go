@@ -52,9 +52,13 @@ func ParseTsConfigFile(tsConfigFileContents []byte) (*TsConfig, error) {
 }
 
 func NewTsPathResolverFromPath(projectRoot string) (*TsPathResolver, error) {
-	tsConfigFileContents, err := os.ReadFile(filepath.Join(projectRoot, "tsconfig.json"))
+	tsConfigPath := filepath.Join(projectRoot, "tsconfig.json")
+	tsConfigFileContents, err := os.ReadFile(tsConfigPath)
 	if err != nil {
-		return nil, fmt.Errorf("could not read tsconfig file: %w", err)
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("tsconfig.json not found in project root (%s). This tool requires a TypeScript project with tsconfig.json", projectRoot)
+		}
+		return nil, fmt.Errorf("could not read tsconfig.json: %w", err)
 	}
 	return NewTsPathResolver(tsConfigFileContents, projectRoot)
 }
