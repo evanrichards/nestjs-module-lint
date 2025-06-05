@@ -15,41 +15,81 @@ import (
 // importLintCmd represents the importLint command
 var importLintCmd = &cobra.Command{
 	Use:   "import-lint",
-	Short: "Unused import linting",
-	Long:  `This command will lint your project for unused module imports.`,
+	Short: "Analyze NestJS modules for unused imports",
+	Long: `Analyze NestJS modules for unused imports in @Module() decorators.
+
+Exit codes:
+  0 - No unused imports found (or --exit-zero flag used)
+  1 - Unused imports found
+  2 - Execution error (invalid path, parsing error, etc.)
+
+Examples:
+  # Basic usage
+  nestjs-module-lint import-lint src/
+
+  # CI/CD usage with clear pass/fail
+  nestjs-module-lint import-lint --check src/
+
+  # Report only mode (always exit 0)
+  nestjs-module-lint import-lint --exit-zero --quiet src/`,
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		var allReports []*app.ModuleReport
+		
 		for _, arg := range args {
 			reports, err := app.RunForDirRecursively(arg)
 			if err != nil {
-				panic(err)
+				fmt.Fprintf(os.Stderr, "Error analyzing %s: %v\n", arg, err)
+				os.Exit(2) // Exit code 2 for execution errors
 			}
-			if ofJson {
-				d, _ := json.Marshal(reports)
-				fmt.Println(string(d))
+			allReports = append(allReports, reports...)
+		}
+		
+		// Output results based on format
+		if ofJson {
+			d, _ := json.Marshal(allReports)
+			fmt.Println(string(d))
+		} else if !quiet {
+			// Text output (default)
+			for _, report := range allReports {
+				fmt.Println(app.PrettyPrintModuleReport(report))
 			}
-			if ofText || (!ofJson && !ofText) {
-				for _, report := range reports {
-					fmt.Println(app.PrettyPrintModuleReport(report))
+			
+			if checkMode {
+				if len(allReports) > 0 {
+					fmt.Printf("✗ Found %d modules with unused imports\n", len(allReports))
+				} else {
+					fmt.Println("✓ No unused imports found")
 				}
-				fmt.Printf("Total number of modules with unused imports: %d\n", len(reports))
+			} else {
+				fmt.Printf("Total number of modules with unused imports: %d\n", len(allReports))
 			}
-			if len(reports) > 0 {
-				os.Exit(1)
-			}
+		}
+		
+		// Determine exit code
+		if len(allReports) > 0 && !exitZero {
+			os.Exit(1) // Exit code 1 for linting failures
 		}
 	},
 }
 
 var ofJson bool
 var ofText bool
+var exitZero bool
+var checkMode bool
+var quiet bool
 
 func init() {
 	rootCmd.AddCommand(importLintCmd)
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	importLintCmd.Flags().BoolVar(&ofJson, "json", false, "Output in JSON")
-	importLintCmd.Flags().BoolVar(&ofText, "text", false, "Output in text")
+	// Output format flags
+	importLintCmd.Flags().BoolVar(&ofJson, "json", false, "Output in JSON format")
+	importLintCmd.Flags().BoolVar(&ofText, "text", false, "Output in text format")
+	
+	// CI/CD flags
+	importLintCmd.Flags().BoolVar(&checkMode, "check", false, "Check mode with pass/fail output (good for CI)")
+	importLintCmd.Flags().BoolVar(&exitZero, "exit-zero", false, "Exit with code 0 even when issues are found")
+	importLintCmd.Flags().BoolVar(&quiet, "quiet", false, "Suppress output (useful with --exit-zero)")
+	
 	importLintCmd.MarkFlagsMutuallyExclusive("json", "text")
 }

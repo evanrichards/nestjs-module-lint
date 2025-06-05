@@ -86,10 +86,17 @@ npx nestjs-module-lint import-lint --json src/app/app.module.ts
 ```bash
 nestjs-module-lint import-lint [flags] <path>
 
-Flags:
-  -h, --help   help for import-lint
-      --json   Output in JSON format
-      --text   Output in text format (default)
+Output Flags:
+      --json        Output in JSON format
+      --text        Output in text format (default)
+
+CI/CD Flags:
+      --check       Check mode with pass/fail output (good for CI)
+      --exit-zero   Exit with code 0 even when issues are found
+      --quiet       Suppress output (useful with --exit-zero)
+
+Other:
+  -h, --help        help for import-lint
 ```
 
 ## 📋 Prerequisites
@@ -159,6 +166,26 @@ Add to your `package.json`:
 
 ### CI/CD Integration
 
+The tool is designed with CI/CD best practices in mind:
+
+**Exit Codes:**
+- `0` - No unused imports found (or `--exit-zero` flag used)
+- `1` - Unused imports found (fails CI/CD pipeline)
+- `2` - Execution error (invalid path, parsing errors, etc.)
+
+**CI/CD Modes:**
+
+```bash
+# Standard mode (exit 1 if issues found)
+nestjs-module-lint import-lint src/
+
+# Check mode (clear pass/fail for CI)
+nestjs-module-lint import-lint --check src/
+
+# Report mode (never fail CI, just report)
+nestjs-module-lint import-lint --exit-zero --quiet src/
+```
+
 **GitHub Actions:**
 
 ```yaml
@@ -169,12 +196,12 @@ jobs:
   module-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: '18'
       - run: npm ci
-      - run: npm run lint:modules
+      - run: npx nestjs-module-lint import-lint --check src/
 ```
 
 **Pre-commit Hook:**
@@ -183,7 +210,7 @@ jobs:
 {
   "husky": {
     "hooks": {
-      "pre-commit": "nestjs-module-lint import-lint src/"
+      "pre-commit": "npx nestjs-module-lint import-lint --check src/"
     }
   }
 }
@@ -216,6 +243,7 @@ make test    # Run tests
 | `make install` | Install binary to `$GOPATH/bin` |
 | `make run` | Build and run with `test.ts` |
 | `make run-json` | Build and run with JSON output |
+| `make check` | Build and run in check mode (CI-friendly) |
 | `make help` | Show all available targets |
 
 ### Manual Build

@@ -40,6 +40,10 @@ run: build
 run-json: build
 	./bin/nestjs-module-lint import-lint --json test.ts
 
+# Run in check mode (good for CI)
+check: build
+	./bin/nestjs-module-lint import-lint --check test.ts
+
 # Show help
 help:
 	@echo "Available targets:"
@@ -52,3 +56,4 @@ help:
 	@echo "  make lint      - Run linter (requires golangci-lint)"
 	@echo "  make run       - Build and run with test.ts"
 	@echo "  make run-json  - Build and run with JSON output"
+	@echo "  make check     - Build and run in check mode (CI-friendly)"

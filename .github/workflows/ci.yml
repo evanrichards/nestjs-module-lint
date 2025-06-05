@@ -25,6 +25,9 @@ jobs:
     
     - name: Run benchmarks
       run: make bench
+    
+    - name: Test CLI functionality
+      run: make check
 
   lint:
     runs-on: ubuntu-latest
